@@ -46,3 +46,8 @@ desktop.ini
 *.bak
 *.bak-*
 ~$*
+
+# 发布脚本（仅本地用）
+_api_push.js
+_commit_message.txt
+
