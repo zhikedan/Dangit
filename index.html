@@ -1,0 +1,3318 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GitHub 热门项目分析报告生成器 · Web 版（本地 Node 服务）</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%233fb950'%3E%3Cpath d='M12 0C5.4 0 0 5.4 0 12c0 5.3 3.4 9.8 8.2 11.4.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6C20.6 21.8 24 17.3 24 12 24 5.4 18.6 0 12 0z'/%3E%3C/svg%3E">
+<!-- 不加载 Google Fonts（国内常被墙会导致首屏 30 秒白屏），统一使用系统字体栈 -->
+<style>
+:root{
+  --bg0:#f4f6fb; --bg1:#f9fbfe; --bg2:#edf1f8;
+  --panel:rgba(255,255,255,.74); --panel2:rgba(255,255,255,.92);
+  --border:rgba(108,138,188,.20); --border2:rgba(21,153,87,.55);
+  --green:#159957; --blue:#2f6fd6; --orange:#e3742e; --purple:#7c5cf0;
+  --red:#e5484d; --yellow:#c28a12; --cyan:#0e9aa8;
+  --text:#1b2434; --muted:#5d6c86; --dim:#8b98ad;
+  --card:#ffffff;
+  --shadow:0 8px 26px rgba(38,60,105,.10),0 2px 8px rgba(38,60,105,.06);
+  --radius:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:'Rajdhani','Microsoft YaHei','PingFang SC',sans-serif;
+  background:radial-gradient(1100px 640px at 12% -8%,#dce8fb 0%,transparent 55%),
+             radial-gradient(900px 560px at 108% 4%,#d7f0e6 0%,transparent 50%),
+             radial-gradient(820px 500px at 50% 112%,#ece4fb 0%,transparent 55%),
+             linear-gradient(160deg,var(--bg0) 0%,var(--bg1) 52%,var(--bg2) 100%);
+  color:var(--text);min-height:100vh;overflow-x:hidden;
+  letter-spacing:.2px;
+}
+::selection{background:rgba(21,153,87,.22)}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#c3d0e4,#a9b9d4);border-radius:6px}
+::-webkit-scrollbar-thumb:hover{background:#94a9cc}
+
+/* ============ 背景层：柔和光斑 + 网格 + 光晕 ============ */
+.bg{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.bg .stars{position:absolute;inset:0;background-image:
+  radial-gradient(2.2px 2.2px at 25px 35px,rgba(120,150,220,.5)),
+  radial-gradient(1.6px 1.6px at 120px 90px,rgba(140,170,230,.45)),
+  radial-gradient(2px 2px at 220px 160px,rgba(110,140,210,.5)),
+  radial-gradient(1.6px 1.6px at 310px 40px,rgba(150,180,240,.45)),
+  radial-gradient(2.2px 2.2px at 400px 210px,rgba(120,150,220,.4)),
+  radial-gradient(1.6px 1.6px at 480px 130px,rgba(160,180,240,.4)),
+  radial-gradient(2px 2px at 550px 250px,rgba(120,150,210,.5)),
+  radial-gradient(1.5px 1.5px at 640px 80px,rgba(140,165,225,.45)),
+  radial-gradient(2.2px 2.2px at 720px 190px,rgba(110,140,205,.45)),
+  radial-gradient(1.8px 1.8px at 800px 300px,rgba(150,175,235,.4));
+  background-size:900px 360px;opacity:.5;animation:twinkle 9s ease-in-out infinite alternate}
+.bg .grid{position:absolute;inset:0;
+  background-image:linear-gradient(rgba(96,130,200,.07) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(96,130,200,.07) 1px,transparent 1px);
+  background-size:52px 52px;
+  -webkit-mask-image:radial-gradient(1000px 620px at 50% 0%,#000 25%,transparent 78%);
+          mask-image:radial-gradient(1000px 620px at 50% 0%,#000 25%,transparent 78%)}
+.bg .glow{position:absolute;border-radius:50%;filter:blur(64px);opacity:.5;animation:breathe 11s ease-in-out infinite alternate}
+.bg .glow.g1{width:460px;height:460px;left:-120px;top:-140px;background:radial-gradient(circle,#bcd4f7,transparent 70%)}
+.bg .glow.g2{width:520px;height:520px;right:-160px;top:8%;background:radial-gradient(circle,#bde8d2,transparent 70%);animation-delay:3s}
+.bg .glow.g3{width:600px;height:600px;left:30%;bottom:-260px;background:radial-gradient(circle,#dccff5,transparent 70%);animation-delay:6s}
+.bg .scanline{position:absolute;left:0;right:0;height:140px;top:-160px;
+  background:linear-gradient(180deg,transparent,rgba(96,130,200,.07),transparent);
+  animation:scan 8s linear infinite}
+@keyframes twinkle{from{opacity:.28}to{opacity:.6}}
+@keyframes breathe{from{opacity:.38}to{opacity:.62}}
+@keyframes scan{to{top:110%}}
+
+/* ============ 布局 ============ */
+.wrap{position:relative;z-index:1;max-width:1720px;margin:0 auto;padding:18px 22px 40px}
+
+/* ============ 顶栏 ============ */
+header{display:flex;align-items:center;gap:14px;padding:6px 4px 16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:13px;min-width:0}
+.logo{width:46px;height:46px;flex:none;position:relative;border-radius:12px;
+  background:linear-gradient(135deg,#e3ecfb,#d6e6fa);border:1px solid rgba(96,130,200,.35);
+  box-shadow:0 6px 20px rgba(96,130,200,.28),inset 0 0 18px rgba(255,255,255,.6);
+  display:grid;place-items:center;overflow:hidden}
+.logo::after{content:'';position:absolute;inset:0;
+  background:conic-gradient(from 0deg,transparent 0deg,rgba(47,111,214,.32) 60deg,transparent 120deg);
+  animation:spin 5s linear infinite}
+.logo svg{width:26px;height:26px;position:relative;z-index:1;filter:drop-shadow(0 0 6px rgba(21,153,87,.5))}
+@keyframes spin{to{transform:rotate(360deg)}}
+.brand h1{font-family:'Orbitron','Microsoft YaHei',sans-serif;font-weight:800;font-size:clamp(15px,1.6vw,20px);
+  letter-spacing:.5px;line-height:1.15;
+  background:linear-gradient(90deg,#1a3f8f 0%,#159957 58%,#12a06b 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 1px 0 rgba(255,255,255,.8));white-space:nowrap}
+.brand .sub{font-size:11px;color:var(--muted);letter-spacing:2px;margin-top:2px;font-family:'Share Tech Mono',monospace}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 10px;border-radius:20px;
+  border:1px solid rgba(21,153,87,.35);background:rgba(21,153,87,.08);color:var(--green);
+  font-family:'Share Tech Mono',monospace;flex:none}
+.badge.blue{border-color:rgba(47,111,214,.35);background:rgba(47,111,214,.08);color:var(--blue)}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.stat-chip{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;padding:6px 12px;
+  border:1px solid var(--border);border-radius:9px;background:var(--panel);font-family:'Share Tech Mono',monospace;
+  backdrop-filter:blur(8px)}
+.stat-chip b{color:var(--cyan);font-weight:600}
+.langbtn{padding:7px 14px;border-radius:9px;border:1px solid var(--border);background:var(--panel);
+  color:var(--text);cursor:pointer;font-size:13px;font-weight:600;transition:.25s;font-family:inherit}
+.langbtn:hover{border-color:var(--blue);box-shadow:0 4px 14px rgba(47,111,214,.18)}
+.linkbtn{padding:7px 14px;border-radius:9px;border:1px solid rgba(227,116,46,.4);background:rgba(227,116,46,.08);
+  color:var(--orange);cursor:pointer;font-size:13px;font-weight:700;transition:.25s;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.linkbtn:hover{box-shadow:0 4px 16px rgba(227,116,46,.28);transform:translateY(-1px)}
+.linkbtn.ai{border-color:rgba(124,92,240,.45);color:#6b4fe0;
+  background:linear-gradient(135deg,rgba(124,92,240,.14),rgba(47,111,214,.10))}
+.linkbtn.ai:hover{border-color:rgba(124,92,240,.7);box-shadow:0 6px 18px rgba(124,92,240,.28)}
+.linkbtn.ai.busy{opacity:.65;pointer-events:none}
+
+/* ============ 玻璃面板通用 ============ */
+.glass{background:linear-gradient(160deg,var(--panel) 0%,rgba(255,255,255,.86) 100%);
+  border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.9);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.panel-title{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border);
+  font-size:14px;font-weight:700;letter-spacing:1px;color:#33456b}
+.panel-title .ico{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 2.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ============ 操作面板 ============ */
+.ops{margin-bottom:18px;position:relative;overflow:hidden}
+.ops::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(21,153,87,.05),transparent);animation:sheen 6s linear infinite}
+@keyframes sheen{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.ops-body{padding:16px 18px}
+.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.seg{display:inline-flex;gap:3px;padding:4px;border-radius:11px;background:rgba(255,255,255,.85);border:1px solid var(--border);box-shadow:inset 0 1px 3px rgba(38,60,105,.06)}
+.seg button{padding:8px 18px;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;
+  font-weight:600;border-radius:8px;transition:.22s;font-family:inherit;display:flex;align-items:center;gap:6px}
+.seg button:hover{color:var(--text);background:rgba(47,111,214,.06)}
+.seg button.on{background:linear-gradient(135deg,#e8f7ee,#e3f3ec);color:var(--green);box-shadow:0 0 10px rgba(21,153,87,.18),inset 0 0 6px rgba(21,153,87,.08);border:1px solid rgba(21,153,87,.3);margin:-1px}
+.datepick{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:10px;border:1px solid var(--border);
+  background:rgba(255,255,255,.85);color:var(--muted);font-size:12px;display:none}
+.datepick.show{display:inline-flex}
+.datepick input{background:#fff;border:1px solid var(--border);border-radius:7px;color:var(--text);
+  padding:5px 8px;font-family:'Share Tech Mono',monospace;font-size:12px;outline:none}
+.datepick input:focus{border-color:var(--blue);box-shadow:0 0 8px rgba(47,111,214,.15)}
+.btn{border:1px solid var(--border);background:var(--panel2);color:var(--text);cursor:pointer;
+  border-radius:10px;font-family:inherit;font-weight:700;transition:.22s;position:relative;overflow:hidden}
+.btn:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(38,60,105,.14);border-color:var(--blue)}
+.btn:active{transform:translateY(0)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn.big{flex:1;min-width:230px;padding:15px 26px;font-size:17px;letter-spacing:1px;
+  background:linear-gradient(135deg,#16a34a,#0d9b7a 70%,#0f8fa0);color:#ffffff;
+  border:1px solid rgba(21,153,87,.55);box-shadow:0 8px 26px rgba(21,153,87,.28),inset 0 1px 0 rgba(255,255,255,.28)}
+.btn.big:hover{border-color:#12a050;box-shadow:0 10px 32px rgba(21,153,87,.4)}
+.btn.big::after{content:'';position:absolute;top:0;left:-80%;width:50%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);transform:skewX(-20deg);animation:shoot 3.2s infinite}
+@keyframes shoot{0%{left:-80%}55%{left:130%}100%{left:130%}}
+.btn.sm-grid{padding:13px 8px;font-size:12.5px;display:flex;flex-direction:column;align-items:center;gap:6px;min-height:66px;justify-content:center;line-height:1.2;background:#fff}
+.btn.sm-grid .e{font-size:19px}
+.btn.sm-grid:hover{border-color:var(--green);box-shadow:0 6px 18px rgba(21,153,87,.16)}
+.grid8{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:10px;margin-top:14px}
+.ops-status{margin-top:14px;padding:9px 14px;border-radius:9px;background:rgba(255,255,255,.7);
+  border:1px dashed rgba(108,138,188,.35);font-size:12px;color:var(--muted);font-family:'Share Tech Mono',monospace;
+  display:flex;gap:16px;flex-wrap:wrap}
+.ops-status span b{color:var(--cyan);font-weight:600}
+.ops-status .lang-val b{color:var(--green)}
+
+/* 生成进度条 */
+.progress{display:none;margin-top:14px;height:22px;border-radius:11px;background:rgba(255,255,255,.9);
+  border:1px solid var(--border);overflow:hidden;position:relative}
+.progress.show{display:block}
+.progress .bar{height:100%;width:0%;border-radius:11px;
+  background:linear-gradient(90deg,#16a34a,#34d399,#7ce7a6,#34d399);background-size:220% 100%;
+  animation:flowbar 1.6s linear infinite;transition:width .35s ease;box-shadow:0 0 16px rgba(21,153,87,.45)}
+@keyframes flowbar{to{background-position:-220% 0}}
+.progress .pct{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;
+  font-family:'Share Tech Mono',monospace;color:#fff;text-shadow:0 1px 3px rgba(0,60,30,.6)}
+
+/* ============ 主内容 ============ */
+main{display:block}
+.content{min-width:0}
+.views{display:none;animation:fadeUp .4s ease}
+.views.on{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* 视图切换（放在控制台里） */
+.viewtabs{display:flex;gap:8px;margin-top:14px;padding:6px;border-radius:12px;
+  background:rgba(255,255,255,.72);border:1px solid var(--border);flex-wrap:wrap}
+.vtab{flex:1;min-width:140px;display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px 14px;border-radius:9px;border:1px solid transparent;background:transparent;cursor:pointer;
+  font-family:inherit;font-size:13.5px;font-weight:600;color:var(--muted);transition:.22s}
+.vtab:hover{color:var(--text);background:rgba(47,111,214,.06)}
+.vtab.on{color:#fff;background:linear-gradient(135deg,#2f6fd6,#159957);border-color:transparent;
+  box-shadow:0 6px 18px rgba(21,153,87,.28)}
+.vtab .e{font-size:16px}
+.vtab .cnt{font-size:11px;padding:1px 8px;border-radius:10px;background:rgba(255,255,255,.25);
+  font-family:'Share Tech Mono',monospace}
+.vtab:not(.on) .cnt{background:rgba(21,153,87,.12);color:var(--green)}
+
+/* ============ 报告预览 ============ */
+.report-head{padding:20px 22px;margin-bottom:16px;position:relative;overflow:hidden}
+.report-head::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--green),var(--blue),var(--purple));border-radius:3px}
+.report-head h2{font-family:'Orbitron','Microsoft YaHei',sans-serif;font-size:clamp(17px,2vw,24px);font-weight:800;
+  background:linear-gradient(90deg,#1a3f8f 0%,#159957 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.report-head .meta{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:12.5px;color:var(--muted);font-family:'Share Tech Mono',monospace}
+.report-head .meta b{color:var(--cyan)}
+.report-head .src{border:1px solid rgba(194,138,18,.4);background:rgba(194,138,18,.07);color:var(--yellow);
+  padding:2px 10px;border-radius:14px;font-size:11px}
+
+/* 总览表 */
+.overview{margin-bottom:18px;overflow:hidden}
+.overview table{width:100%;border-collapse:collapse}
+.overview th{font-size:12px;color:var(--muted);text-align:left;padding:12px 14px;font-family:'Share Tech Mono',monospace;
+  letter-spacing:1px;background:linear-gradient(180deg,#eef2f9,#e6ecf6);border-bottom:1px solid var(--border)}
+.overview td{padding:11px 14px;border-bottom:1px solid rgba(108,138,188,.12);font-size:13.5px}
+.overview tr:last-child td{border-bottom:none}
+.overview tbody tr{transition:.18s;cursor:pointer}
+.overview tbody tr:hover{background:rgba(47,111,214,.06)}
+.overview .rank{font-family:'Orbitron',sans-serif;font-weight:700;width:52px;color:var(--text)}
+.overview .repo{color:#2f6fd6;font-weight:700}
+.overview .lang{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.overview .lang i{width:9px;height:9px;border-radius:50%;display:inline-block}
+/* 可折叠总览 */
+details.overview>summary{cursor:pointer;list-style:none;user-select:none}
+details.overview>summary::-webkit-details-marker{display:none}
+details.overview>summary::after{content:'展开 ▾';margin-left:auto;font-size:11px;font-weight:600;color:var(--muted);
+  border:1px solid var(--border);border-radius:20px;padding:2px 10px;font-family:'Share Tech Mono',monospace;transition:.2s}
+details.overview[open]>summary::after{content:'收起 ▴'}
+details.overview>summary:hover::after{border-color:var(--blue);color:var(--blue)}
+details.overview:not([open]) table{display:none}
+details.overview[open] table{margin-top:4px}
+details.overview .cnt{font-size:11px;font-weight:600;color:var(--muted);font-family:'Share Tech Mono',monospace;
+  border:1px solid var(--border);border-radius:20px;padding:1px 8px;margin-left:2px}
+.trend-tag{font-size:11px;padding:2px 9px;border-radius:12px;font-family:'Share Tech Mono',monospace}
+.trend-tag.boom{background:rgba(21,153,87,.1);color:var(--green);border:1px solid rgba(21,153,87,.28)}
+.trend-tag.flat{background:rgba(47,111,214,.08);color:var(--blue);border:1px solid rgba(47,111,214,.24)}
+.trend-tag.slow{background:rgba(194,138,18,.08);color:var(--yellow);border:1px solid rgba(194,138,18,.26)}
+.stars-new{color:#0f8f4f;font-family:'Share Tech Mono',monospace;font-weight:600}
+
+/* 项目卡片 */
+.repo-card{margin-bottom:16px;overflow:hidden;position:relative;transition:.25s;background:#fff}
+.repo-card:hover{border-color:rgba(47,111,214,.3);box-shadow:0 12px 32px rgba(38,60,105,.14),0 2px 8px rgba(38,60,105,.06)}
+.repo-card .accent{position:absolute;top:0;left:0;bottom:0;width:4px;background:linear-gradient(180deg,var(--g1),var(--g2))}
+.rc-head{display:flex;align-items:center;gap:14px;padding:16px 20px 12px;flex-wrap:wrap}
+.rank-badge{width:44px;height:44px;flex:none;border-radius:12px;display:grid;place-items:center;
+  font-family:'Orbitron',sans-serif;font-weight:900;font-size:19px;color:#33456b;
+  background:linear-gradient(135deg,#eef3fb,#e2ebf7);border:1px solid rgba(108,138,188,.28)}
+.rank-badge.medal{font-size:24px;background:linear-gradient(135deg,#fdf3d7,#fae8bd);border-color:rgba(194,138,18,.45);box-shadow:0 0 14px rgba(194,138,18,.22)}
+.rc-title{min-width:0}
+.rc-title .full{font-size:17px;font-weight:700;color:#22314e;word-break:break-all}
+.rc-title .full span{color:var(--green)}
+.rc-title .desc{font-size:13px;color:var(--muted);margin-top:3px;max-width:760px}
+.rc-meta{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.mchip{font-size:11.5px;padding:4px 10px;border-radius:9px;border:1px solid var(--border);
+  background:#f4f7fc;color:var(--muted);font-family:'Share Tech Mono',monospace;display:inline-flex;align-items:center;gap:5px}
+.mchip b{color:var(--text);font-weight:600}
+.mchip.star{color:var(--yellow);border-color:rgba(194,138,18,.3);background:rgba(194,138,18,.05)}
+.mchip.lic{color:var(--green);border-color:rgba(21,153,87,.3);background:rgba(21,153,87,.05)}
+.mchip.lic.warn{color:var(--yellow);border-color:rgba(194,138,18,.3);background:rgba(194,138,18,.05)}
+.rc-body{padding:0 20px 8px}
+.q7{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:9px;margin-top:6px}
+.q{background:#f6f8fc;border:1px solid rgba(108,138,188,.12);border-radius:10px;padding:10px 13px;transition:.18s}
+.q:hover{border-color:rgba(108,138,188,.3);background:#fbfcff}
+.q .qk{font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.q .qv{font-size:12.8px;line-height:1.65;color:#41506d}
+.qk.a{color:var(--orange)} .qk.b{color:var(--blue)} .qk.c{color:var(--green)}
+.qk.d{color:var(--purple)} .qk.e{color:var(--cyan)} .qk.f{color:var(--yellow)} .qk.g{color:var(--red)}
+.rc-links{display:flex;gap:8px;flex-wrap:wrap;padding:10px 20px 16px;align-items:center}
+.addr{font-size:11.5px;color:var(--dim);font-family:'Share Tech Mono',monospace;word-break:break-all;flex:1;min-width:200px}
+.mini-btn{font-size:11.5px;padding:5px 12px;border-radius:8px;cursor:pointer;border:1px solid var(--border);
+  background:#fff;color:var(--text);font-family:inherit;font-weight:600;transition:.2s;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+.mini-btn:hover{border-color:var(--blue);transform:translateY(-1px);box-shadow:0 3px 10px rgba(47,111,214,.14)}
+.mini-btn.gh{border-color:rgba(21,153,87,.32);color:var(--green);background:rgba(21,153,87,.05)}
+.mini-btn.gitee{border-color:rgba(200,84,59,.35);color:#d0562f;background:rgba(200,84,59,.05)}
+.mini-btn.mirror{border-color:rgba(47,111,214,.3);color:var(--blue);background:rgba(47,111,214,.05)}
+.mini-btn.home{color:var(--purple);border-color:rgba(124,92,240,.32);background:rgba(124,92,240,.05)}
+.mini-btn.copy{color:var(--yellow);border-color:rgba(194,138,18,.3);background:rgba(194,138,18,.05)}
+
+/* 趋势总结 */
+.trend-sec{margin-bottom:16px;padding:20px;background:#fff}
+.trend-sec h3{font-size:16px;margin-bottom:14px;display:flex;align-items:center;gap:9px;color:#22314e}
+.trend-sec h3 .e{font-size:18px}
+.trend-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:10px}
+.t-item{background:#f6f8fc;border:1px solid rgba(108,138,188,.12);border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.6;color:#41506d}
+.t-item b{color:var(--green)}
+.picks{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:10px}
+.pick{background:linear-gradient(150deg,rgba(21,153,87,.06),rgba(47,111,214,.04));
+  border:1px solid rgba(21,153,87,.24);border-radius:12px;padding:14px 16px;position:relative;overflow:hidden;background:#fff}
+.pick::before{content:'★';position:absolute;right:-6px;top:-14px;font-size:70px;color:rgba(194,138,18,.1)}
+.pick .pn{font-weight:700;color:#0f8f4f;font-size:13.5px}
+.pick .pr{font-size:12.5px;color:#41506d;margin-top:4px;line-height:1.6}
+
+/* 空状态 */
+.empty{text-align:center;padding:70px 20px;color:var(--dim)}
+.empty .big{font-size:52px;margin-bottom:14px;filter:drop-shadow(0 0 18px rgba(47,111,214,.25));animation:float 4s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.empty p{font-size:14px;line-height:1.8;color:#5d6c86}
+.empty .hint{font-size:12px;color:var(--muted);margin-top:8px;font-family:'Share Tech Mono',monospace}
+
+/* ============ 收藏对比 ============ */
+.fav-wrap{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.fav-panel{overflow:hidden;background:#fff}
+.fav-body{padding:16px 18px}
+.fav-add{display:flex;gap:8px;margin-bottom:14px}
+.fav-add input{flex:1;background:#fff;border:1px solid var(--border);border-radius:9px;color:var(--text);
+  padding:10px 13px;font-size:13px;outline:none;font-family:'Share Tech Mono',monospace}
+.fav-add input:focus{border-color:var(--green);box-shadow:0 0 10px rgba(21,153,87,.15)}
+.fav-list{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow:auto}
+.fav-item{display:flex;align-items:center;gap:10px;padding:10px 13px;border-radius:10px;
+  background:#f6f8fc;border:1px solid rgba(108,138,188,.12);cursor:pointer;transition:.18s}
+.fav-item:hover{border-color:rgba(47,111,214,.3);background:#fbfcff}
+.fav-item.sel{border-color:var(--green);background:rgba(21,153,87,.06);box-shadow:0 0 10px rgba(21,153,87,.12)}
+.fav-item .nm{font-weight:700;color:#22314e;font-size:13.5px;font-family:'Share Tech Mono',monospace;flex:1;word-break:break-all}
+.fav-item .del{background:none;border:none;color:var(--dim);cursor:pointer;font-size:15px;padding:2px 6px;border-radius:6px;transition:.18s}
+.fav-item .del:hover{color:var(--red);background:rgba(229,72,77,.08)}
+.cmp-tip{font-size:12px;color:var(--muted);margin-top:12px;line-height:1.7}
+.cmp-tip b{color:var(--yellow)}
+.cmp-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;animation:fadeUp .35s ease}
+.cmp-grid .repo-card{margin-bottom:0}
+.cmp-vs{position:relative}
+.cmp-vs::before{content:'VS';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;
+  font-family:'Orbitron',sans-serif;font-weight:900;font-size:15px;color:#fff;background:linear-gradient(135deg,#7c5cf0,#2f6fd6);
+  padding:9px 13px;border-radius:12px;box-shadow:0 6px 22px rgba(124,92,240,.4);border:1px solid rgba(124,92,240,.45)}
+
+/* ============ 报告历史 ============ */
+.his-panel{overflow:hidden;background:#fff}
+.his-body{padding:14px 18px}
+.his-item{display:flex;align-items:center;gap:12px;padding:13px 15px;border-radius:11px;margin-bottom:9px;
+  background:#f6f8fc;border:1px solid rgba(108,138,188,.12);transition:.2s;flex-wrap:wrap}
+.his-item:hover{border-color:rgba(47,111,214,.28);background:#fbfcff;box-shadow:0 4px 14px rgba(38,60,105,.08)}
+.his-item .doc{width:38px;height:38px;flex:none;border-radius:9px;display:grid;place-items:center;font-size:19px;
+  background:linear-gradient(135deg,#e6eefa,#dbe9fa);border:1px solid rgba(47,111,214,.22)}
+.his-item .info{flex:1;min-width:180px}
+.his-item .info .nm{font-weight:700;color:#22314e;font-size:13.5px;word-break:break-all}
+.his-item .info .tm{font-size:11.5px;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-top:3px}
+.his-item .acts{display:flex;gap:7px}
+
+/* ============ 壁纸视频台：html/壁纸 里放什么就播什么 ============ */
+.wall-stage{margin:34px auto 6px;width:min(1080px,96vw)}
+.wall-frame{position:relative;overflow:hidden;border-radius:18px;aspect-ratio:16/9;max-height:min(62vh,620px);
+  background:#05080f;border:1px solid rgba(120,145,190,.18);
+  box-shadow:0 20px 46px rgba(20,36,64,.22),inset 0 1px 0 rgba(255,255,255,.06)}
+.wall-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;background:#05080f}
+.wall-empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:24px;
+  color:#8fa2c0;font-size:13px;line-height:2.1;letter-spacing:.3px}
+.wall-empty b{color:#dbe8ff}
+.wall-empty code{font-family:'Share Tech Mono',monospace;color:#8fd6a8;background:rgba(143,214,168,.10);padding:1px 6px;border-radius:5px}
+.wall-bar{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:8px;padding:10px 14px;
+  background:linear-gradient(180deg,transparent,rgba(4,8,16,.74));opacity:0;transition:.22s;pointer-events:none}
+.wall-frame:hover .wall-bar{opacity:1;pointer-events:auto}
+.wall-name{font-family:'Share Tech Mono',monospace;font-size:11.5px;color:#d6e4ff;max-width:48%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wall-grow{margin-left:auto}
+.wall-btn{width:30px;height:30px;border-radius:9px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);
+  color:#e8f1ff;cursor:pointer;font-size:12px;line-height:1;display:inline-grid;place-items:center;transition:.18s;font-family:inherit}
+.wall-btn:hover{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.32)}
+.wall-btn:disabled{opacity:.32;cursor:not-allowed;pointer-events:none}
+.wall-pin{display:inline-flex;align-items:center;gap:5px;width:auto;min-width:66px;height:30px;padding:0 12px;
+  border-radius:9px;font-size:11px;font-weight:700;letter-spacing:.4px;white-space:nowrap}
+.wall-pin.on{background:linear-gradient(135deg,#ff8a3d,#ff6a2a);border-color:rgba(255,150,80,.9);color:#fff;
+  box-shadow:0 0 16px rgba(255,120,50,.55)}
+
+/* 运行日志坞（右下角浮层，替代原来杯子里的日志） */
+.log-fab{position:fixed;right:18px;bottom:18px;z-index:70;width:46px;height:46px;border-radius:14px;cursor:pointer;
+  border:1px solid var(--border);background:rgba(255,255,255,.92);backdrop-filter:blur(10px);
+  box-shadow:var(--shadow);font-size:18px;display:grid;place-items:center;transition:.2s}
+.log-fab:hover{transform:translateY(-2px);border-color:var(--border2)}
+.log-fab.new::after{content:'';position:absolute;top:7px;right:7px;width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 0 2px #fff}
+.log-dock{position:fixed;right:18px;bottom:74px;z-index:71;width:min(520px,92vw);border-radius:14px;overflow:hidden;
+  background:#0b1322;border:1px solid rgba(120,145,190,.25);box-shadow:0 24px 60px rgba(12,22,42,.45)}
+.log-dock[hidden]{display:none}
+.log-dock .term-head{background:#111c30;border-bottom:1px solid rgba(255,255,255,.08);color:#cfe0ff}
+.log-dock .term-head .ttl{color:#cfe0ff}
+.log-dock .term-head .ttl .live{color:#7ef0a8}
+.log-dock .mini-btn{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:#cfe0ff}
+.log-dock .mini-btn:hover{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.32);box-shadow:none}
+.log-dock .term-body{height:240px;background:transparent}
+
+/* ---------- 左：顶栏 + 控制台 / 右：视频，一张卡两栏一条竖线 ---------- */
+.stack{
+  position:relative;z-index:1;margin:0 0 26px;border-radius:20px;
+  display:grid;grid-template-columns:minmax(360px,1.15fr) minmax(0,3fr);align-items:stretch;
+  background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(255,255,255,.78));
+  border:1px solid rgba(255,255,255,.92);
+  box-shadow:0 18px 46px rgba(31,56,102,.14),inset 0 1px 0 #fff;
+  backdrop-filter:blur(16px) saturate(1.15);-webkit-backdrop-filter:blur(16px) saturate(1.15);
+}
+.stack-left{display:flex;flex-direction:column;min-width:0;border-right:1px solid rgba(120,145,190,.22)}
+.stack-left>header{
+  position:relative;margin:0;padding:14px 20px 12px;gap:9px 10px;
+  border:0;border-bottom:1px solid rgba(120,145,190,.20);border-radius:19px 0 0 0;
+  background:transparent;box-shadow:none;
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+}
+/* 左栏变窄：顶栏收紧，按钮整齐换行 */
+.stack-left>header .logo{width:42px;height:42px;border-radius:12px}
+.stack-left>header .brand h1{font-size:16px;line-height:1.25}
+.stack-left>header .badge{font-size:10px;padding:3px 9px}
+.stack-left>header .header-right{width:100%;margin-left:0;justify-content:flex-start;gap:6px}
+.stack-left>header .header-right .linkbtn,
+.stack-left>header .header-right .langbtn{padding:6px 11px;font-size:11.5px}
+.stack-left>header .stat-chip{display:none}
+.stack-left>.ops{
+  margin:0;border:0;border-radius:0 0 0 19px;background:transparent;box-shadow:none;
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+}
+.stack-left>.ops .panel-title{border-bottom:1px solid rgba(120,145,190,.14)}
+.stack .wall-stage{width:auto;height:100%;min-width:0;margin:0}
+.stack .wall-frame{
+  height:100%;aspect-ratio:auto;border:0;border-radius:0 19px 19px 0;
+  box-shadow:none;max-height:none;background:#060a13;
+}
+/* 视频窗口左右拉伸：窗口更宽，视频按原比例完整显示（不裁切、不放大内容） */
+.stack .wall-video{object-fit:contain}
+/* 打开即整屏：右栏 2/3 宽，卡片高度吃掉剩余视口，不产生滚动 */
+@media(min-width:1081px){
+  .wrap{min-height:100vh;display:flex;flex-direction:column}
+  .stack{flex:1 1 0;min-height:440px;overflow:hidden}
+  .wrap>footer{margin-top:auto}
+  .stack-left{overflow:hidden}
+  .stack-left>header{flex:none}
+  .stack-left>.ops{flex:1;display:flex;flex-direction:column;min-height:0}
+  .stack-left>.ops .ops-body{flex:1;margin-block:auto;min-height:0;overflow-y:auto}
+}
+/* 折叠工具栏 */
+.tools-fold{margin-top:14px;border:1px solid rgba(120,145,190,.16);border-radius:14px;background:rgba(255,255,255,.62);overflow:hidden}
+.fold-head{display:flex;align-items:center;gap:9px;width:100%;padding:11px 14px;border:0;background:transparent;cursor:pointer;font:inherit;color:#42536f;text-align:left;transition:background .18s}
+.fold-head:hover{background:rgba(47,111,214,.06)}
+.fold-head .fi{font-size:15px;line-height:1}
+.fold-head .ft{font-size:12.5px;font-weight:700;white-space:nowrap}
+.fold-head .fh{flex:1;min-width:0;font-size:10.5px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fold-head .fc{font-size:10.5px;font-weight:700;color:#2f6fd6;background:rgba(47,111,214,.1);border-radius:999px;padding:1px 8px}
+.fold-head .chev{font-size:10px;color:var(--dim);transition:transform .25s}
+.tools-fold.open .fold-head .chev{transform:rotate(180deg)}
+.tools-fold .grid8{display:none;margin:0;padding:12px 14px 14px;border-top:1px solid rgba(120,145,190,.14)}
+.tools-fold.open .grid8{display:grid}
+@media(max-width:1180px){
+  .stack-left>header .brand .sub{display:none}
+  .stack-left>header .header-right{gap:5px}
+}
+@media(max-width:1080px){
+  .stack{grid-template-columns:1fr}
+  .stack-left{border-right:0;border-bottom:1px solid rgba(120,145,190,.22)}
+  .stack-left>header{border-radius:19px 19px 0 0;padding:12px 16px}
+  .stack-left>.ops{border-radius:0}
+  .stack .wall-stage{height:auto}
+  .stack .wall-frame{height:auto;aspect-ratio:16/9;border-radius:0 0 19px 19px;border-top:1px solid rgba(120,145,190,.22)}
+}
+@media(max-width:620px){
+  .stack-left>header{padding:10px 12px;border-radius:15px 15px 0 0}
+  .stack .wall-frame{max-height:52vh;border-radius:0 0 15px 15px}
+}
+.wall-frame:focus-within .wall-bar{opacity:1;pointer-events:auto}
+@media(hover:none){.wall-bar{opacity:1;pointer-events:auto}}
+@media(max-width:620px){.wall-stage{margin-top:26px}.wall-frame{border-radius:14px;max-height:52vh}.wall-name{max-width:40%}}
+.term-head{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;background:rgba(255,255,255,.85)}
+.term-head .dots{display:flex;gap:6px}
+.term-head .dots i{width:10px;height:10px;border-radius:50%}
+.term-head .dots i:nth-child(1){background:#ff5f57}.term-head .dots i:nth-child(2){background:#febc2e}.term-head .dots i:nth-child(3){background:#28c840}
+.term-head .ttl{font-size:13px;font-weight:700;color:#33456b;letter-spacing:1px;font-family:'Share Tech Mono',monospace}
+.term-head .tools{margin-left:auto;display:flex;gap:8px}
+.term-body{height:210px;overflow:auto;padding:12px 16px;font-family:'Share Tech Mono',monospace;font-size:12.5px;line-height:1.85;
+  background:linear-gradient(180deg,#0c1322,#080d18)}
+.term-body.collapsed{display:none}
+.log-line{white-space:pre-wrap;word-break:break-all;animation:logIn .2s ease}
+.log-line .t{color:#3d4f75;margin-right:8px}
+.log-line.info{color:#9db4d9}
+.log-line.ok{color:#3fb950}
+.log-line.warn{color:#e3b341}
+.log-line.err{color:#ff5f57}
+.log-line.sys{color:#58a6ff;font-weight:700}
+@keyframes logIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+
+/* ============ 模态框 ============ */
+.overlay{position:fixed;inset:0;background:rgba(23,33,54,.42);backdrop-filter:blur(8px);z-index:100;
+  display:none;place-items:center;padding:20px}
+.overlay.show{display:grid;animation:fadeUp .25s ease}
+.modal{width:min(860px,96vw);max-height:88vh;overflow:auto;border-radius:16px;position:relative;animation:pop .28s cubic-bezier(.2,1.2,.4,1);
+  background:linear-gradient(160deg,#ffffff,#f4f7fc)}
+.modal ::-webkit-scrollbar-thumb{background:#b8c7dd}
+@keyframes pop{from{opacity:0;transform:scale(.94) translateY(10px)}to{opacity:1;transform:none}}
+.modal .close{position:absolute;top:12px;right:14px;width:32px;height:32px;border-radius:9px;border:1px solid var(--border);
+  background:#fff;color:var(--muted);cursor:pointer;font-size:15px;z-index:5;transition:.2s}
+.modal .close:hover{color:var(--red);border-color:var(--red);box-shadow:0 0 10px rgba(229,72,77,.2)}
+.modal .minbtn{position:absolute;top:12px;right:52px;width:32px;height:32px;border-radius:9px;border:1px solid var(--border);
+  background:#fff;color:var(--muted);cursor:pointer;font-size:17px;line-height:1;z-index:5;transition:.2s;font-family:inherit}
+.modal .minbtn:hover{color:var(--blue);border-color:var(--blue);box-shadow:0 0 10px rgba(47,111,214,.2)}
+.overlay.minimized{display:none!important}
+.mini-stack{position:fixed;right:18px;bottom:18px;z-index:60;display:flex;flex-direction:column;gap:10px;align-items:flex-end}
+.mini-card{width:302px;border-radius:14px;padding:11px 13px;background:rgba(255,255,255,.95);
+  border:1px solid rgba(108,138,188,.28);box-shadow:0 14px 34px rgba(38,60,105,.22);backdrop-filter:blur(10px);
+  animation:miniIn .22s ease}
+@keyframes miniIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.mini-card .mini-title{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:#22314e}
+.mini-card .mini-title .grow{flex:1}
+.mini-card .mini-title .tag{font-size:9.5px;color:var(--dim);font-family:'Share Tech Mono',monospace;letter-spacing:1px}
+.mini-card .mini-status{font-size:11.5px;color:var(--muted);margin:5px 0 7px;line-height:1.5;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-all}
+.mini-card .mini-bar{height:5px;border-radius:3px;background:rgba(108,138,188,.16);overflow:hidden}
+.mini-card .mini-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2f6fd6,#159957);transition:width .3s}
+.mini-card .mini-acts{display:flex;gap:6px;justify-content:flex-end;margin-top:8px}
+.mini-card .mini-acts .mini-btn{font-size:10.5px;padding:2px 8px}
+.modal-head{padding:16px 22px;border-bottom:1px solid var(--border);font-size:16px;font-weight:700;color:#22314e;
+  background:linear-gradient(135deg,rgba(47,111,214,.06),rgba(21,153,87,.04));border-radius:16px 16px 0 0}
+.modal-body{padding:18px 22px}
+.mtabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:10px;flex-wrap:wrap}
+.mtab{padding:8px 16px;border-radius:9px;border:1px solid transparent;background:none;color:var(--muted);cursor:pointer;
+  font-size:13px;font-weight:600;font-family:inherit;transition:.2s}
+.mtab.on{color:#2f6fd6;background:rgba(47,111,214,.08);border-color:rgba(47,111,214,.26)}
+.mtab:hover{color:var(--text)}
+.mview{display:none}
+.mview.on{display:block;animation:fadeUp .3s ease}
+.form-row{margin-bottom:13px}
+.form-row label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;letter-spacing:.5px}
+.form-row input[type=text],.form-row input[type=password],.form-row input[type=time],.form-row input[type=date]{
+  width:100%;background:#fff;border:1px solid var(--border);border-radius:9px;color:var(--text);
+  padding:10px 13px;font-size:13px;outline:none;transition:.2s;font-family:'Share Tech Mono',monospace}
+.form-row input:focus{border-color:var(--blue);box-shadow:0 0 10px rgba(47,111,214,.15)}
+.form-row .hint{font-size:11.5px;color:var(--dim);margin-top:5px;line-height:1.6}
+.check{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--text);cursor:pointer;padding:4px 0}
+.check input{width:16px;height:16px;accent-color:var(--green)}
+.radios{display:flex;gap:8px;flex-wrap:wrap}
+.radio{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:9px;border:1px solid var(--border);
+  cursor:pointer;font-size:13px;color:var(--muted);transition:.2s;background:#fff}
+.radio input{accent-color:var(--green)}
+.radio:has(input:checked){border-color:var(--green);color:var(--green);background:rgba(21,153,87,.06)}
+.weekdays{display:flex;gap:6px;flex-wrap:wrap}
+.wd{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:#fff;
+  color:var(--muted);cursor:pointer;font-size:12px;font-weight:700;transition:.2s;font-family:inherit}
+.wd.on{background:rgba(21,153,87,.1);color:var(--green);border-color:var(--green);box-shadow:0 0 8px rgba(21,153,87,.18)}
+.about-card{background:#f6f8fc;border:1px solid rgba(108,138,188,.12);border-radius:12px;padding:16px;margin-bottom:12px}
+.about-card h4{color:#22314e;font-size:14px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.about-card p{font-size:13px;color:#41506d;line-height:1.75}
+.about-card .links{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.about-card code{background:rgba(21,153,87,.08);color:var(--green);padding:1px 7px;border-radius:6px;font-size:12px;font-family:'Share Tech Mono',monospace}
+.actions{display:flex;gap:10px;margin-top:18px;justify-content:flex-end}
+.btn.ok{background:linear-gradient(135deg,#16a34a,#0d9b7a);color:#fff;border-color:rgba(21,153,87,.5);padding:10px 22px}
+.btn.ok:hover{box-shadow:0 6px 18px rgba(21,153,87,.32)}
+.btn.ghost{background:none;color:var(--muted)}
+.btn.ghost:hover{color:var(--text);border-color:var(--border2)}
+.toast{position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-120px);z-index:200;
+  background:rgba(16,26,44,.94);border:1px solid rgba(21,153,87,.5);color:#7de38d;padding:12px 22px;border-radius:12px;
+  font-size:13.5px;font-weight:600;box-shadow:0 10px 30px rgba(20,35,60,.3),0 0 20px rgba(21,153,87,.18);
+  transition:transform .35s cubic-bezier(.2,1.2,.4,1);backdrop-filter:blur(10px)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.warn{border-color:rgba(227,179,65,.5);color:#e3b341}
+.toast.err{border-color:rgba(255,95,87,.5);color:#ff5f57}
+
+footer{text-align:center;margin-top:26px;color:var(--dim);font-size:12px;font-family:'Share Tech Mono',monospace;line-height:1.9}
+footer a{color:var(--green);text-decoration:none}
+
+@media(max-width:980px){
+  .fav-wrap,.cmp-grid{grid-template-columns:1fr}
+  .cmp-vs::before{display:none}
+}
+@media(max-width:620px){
+  .brand h1{white-space:normal}
+  .btn.big{min-width:100%}
+}
+
+/* ============ 一键部署（Coolify） ============ */
+.dp-status{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--muted);
+  background:#f6f8fc;border:1px solid rgba(108,138,188,.16);border-radius:10px;padding:9px 13px;margin-bottom:14px}
+.dp-status .dot{width:8px;height:8px;border-radius:50%;background:#c3cbd8;box-shadow:0 0 0 3px rgba(195,203,216,.2)}
+.dp-status.ok .dot{background:var(--green);box-shadow:0 0 0 3px rgba(21,153,87,.16)}
+.dp-status.err .dot{background:var(--red);box-shadow:0 0 0 3px rgba(229,72,77,.16)}
+.dp-status .grow{flex:1}
+.dp-log{margin-top:12px;max-height:190px;overflow:auto;background:#0f1a2b;border:1px solid rgba(108,138,188,.2);
+  border-radius:10px;padding:11px 13px;font-family:'Share Tech Mono',monospace;font-size:11.5px;line-height:1.75;
+  color:#9fd6b6;white-space:pre-wrap;word-break:break-all;display:none}
+.dp-log.show{display:block}
+.dp-log .ln-err{color:#ff8a80}
+.dp-result{margin-top:12px;background:rgba(21,153,87,.06);border:1px solid rgba(21,153,87,.28);border-radius:11px;
+  padding:13px 15px;font-size:13px;color:#2b3a57;line-height:1.9}
+.dp-result b{color:var(--green)}
+.dp-result .links{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.dp-adv{margin:6px 0 4px;border:1px dashed rgba(108,138,188,.35);border-radius:10px;padding:9px 13px;background:rgba(246,248,252,.7)}
+.dp-adv summary{cursor:pointer;font-size:12.5px;color:var(--muted);outline:none;user-select:none}
+.dp-adv summary:hover{color:var(--blue)}
+.dp-adv-body{padding-top:12px}
+.dp-adv-body .form-row:last-child{margin-bottom:0}
+#dpTargetSeg button{padding:8px 14px}
+.dp-chip{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;background:rgba(47,111,214,.08);
+  color:var(--blue);font-size:11.5px;font-family:'Share Tech Mono',monospace;margin:4px 6px 0 0}
+
+/* ---- 本地部署 ---- */
+.ld-cands{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.ld-cand{display:flex;align-items:center;gap:10px;padding:8px 11px;border:1px solid var(--border);border-radius:9px;
+  background:#fff;cursor:pointer;transition:.18s;font-size:12.5px}
+.ld-cand:hover{border-color:var(--blue);box-shadow:0 4px 14px rgba(47,111,214,.1)}
+.ld-cand b{color:#22314e;font-size:13px}
+.ld-cand .meta{color:var(--dim);font-size:11.5px;margin-left:auto;font-family:'Share Tech Mono',monospace;white-space:nowrap}
+.ld-path{font-size:11.8px;margin-top:6px;line-height:1.7}
+.ld-path.ok{color:var(--green)} .ld-path.err{color:var(--red)} .ld-path.warn{color:#a3720f}
+.ld-hist{margin-top:10px;max-height:180px;overflow:auto;border:1px solid var(--border);border-radius:10px;background:#fbfcfe}
+.ld-hist .it{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid rgba(108,138,188,.12);font-size:12px}
+.ld-hist .it:last-child{border-bottom:none}
+.ld-hist .st{font-weight:700}
+.ld-hist .st.ok{color:var(--green)} .ld-hist .st.bad{color:var(--red)}
+.ld-hist .p{color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---- 问题总结 ---- */
+.ld-sum-btn{position:relative}
+.ld-sum-btn:disabled{opacity:.45;cursor:not-allowed}
+.ld-sum-badge{display:inline-flex;align-items:center;justify-content:center;min-width:17px;height:17px;padding:0 5px;
+  margin-left:6px;border-radius:9px;background:var(--red);color:#fff;font-size:10.5px;font-weight:700;font-family:'Share Tech Mono',monospace}
+.ld-sum-btn.has-error{border-color:rgba(229,72,77,.45);color:#b3302f}
+.ld-sum-btn.has-warn{border-color:rgba(227,179,65,.5);color:#8a6110}
+.sum-verdict{margin-left:10px;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:999px}
+.sum-verdict.bad{background:rgba(229,72,77,.1);color:#b3302f}
+.sum-verdict.ok{background:rgba(21,153,87,.1);color:var(--green)}
+.sum-sec{margin-bottom:14px}
+.sum-sec h4{font-size:12.5px;color:#2b3a57;margin:0 0 7px;display:flex;align-items:center;gap:7px}
+.sum-kv{display:grid;grid-template-columns:96px 1fr;gap:4px 12px;font-size:12.5px;color:var(--muted)}
+.sum-kv b{color:var(--dim);font-weight:500}
+.sum-kv span{color:var(--text);word-break:break-all}
+.sum-cause{background:rgba(229,72,77,.05);border:1px solid rgba(229,72,77,.22);border-radius:10px;padding:11px 13px;font-size:12.8px;color:#8f2c2d}
+.sum-cause .err{color:#5c6b83;font-family:'Share Tech Mono',monospace;font-size:11.5px;margin-top:6px;word-break:break-all}
+.sum-list{display:flex;flex-direction:column;gap:7px}
+.sum-item{border:1px solid var(--border);border-radius:9px;padding:9px 11px;background:#fbfcfe}
+.sum-item.error{border-color:rgba(229,72,77,.3);background:rgba(229,72,77,.035)}
+.sum-item.warn{border-color:rgba(227,179,65,.35);background:rgba(227,179,65,.045)}
+.sum-item .hd{display:flex;align-items:center;gap:8px;font-size:12.2px;color:#2b3a57;font-weight:600}
+.sum-item .lv{font-size:10px;padding:1px 6px;border-radius:5px;font-family:'Share Tech Mono',monospace}
+.sum-item .lv.error{background:rgba(229,72,77,.14);color:#b3302f}
+.sum-item .lv.warn{background:rgba(227,179,65,.2);color:#8a6110}
+.sum-item .dt{font-size:11.8px;color:var(--muted);margin-top:4px;word-break:break-all}
+.sum-item .sg{font-size:11.5px;color:var(--green);margin-top:3px}
+.sum-item .tm{margin-left:auto;color:var(--dim);font-size:10.5px;font-family:'Share Tech Mono',monospace}
+.sum-acts{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+.sum-acts div::before{content:'🛠 ';margin-right:2px}
+.sum-logs{background:#0f1a2b;color:#9fd6b6;border-radius:10px;padding:10px 12px;font-family:'Share Tech Mono',monospace;
+  font-size:11px;line-height:1.65;max-height:180px;overflow:auto;white-space:pre-wrap;word-break:break-all}
+
+/* 部署判定徽标 */
+.ld-verdict{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:7px 0 2px;padding:7px 11px;
+  border-radius:9px;font-size:12.2px;line-height:1.6}
+.ld-verdict.need{background:rgba(47,111,214,.06);border:1px solid rgba(47,111,214,.22);color:#2f4a75}
+.ld-verdict.none{background:rgba(21,153,87,.07);border:1px solid rgba(21,153,87,.24);color:#1c6b45}
+.ld-verdict em{font-style:normal;color:var(--dim);font-size:11.5px}
+
+/* ===== 视觉升级层（由 _polish.css 注入） ===== */
+/* ============================================================
+   视觉升级层（只做样式覆盖，不改任何 id / 交互）
+   目标：统一圆角与阴影、收敛配色、提升层次与可读性
+   ============================================================ */
+
+:root{
+  --radius:16px;
+  --border:rgba(120,145,190,.22);
+  --ink:#16223a;
+  --ink-2:#3d4f6b;
+  --shadow:0 12px 34px rgba(31,56,102,.10),0 2px 8px rgba(31,56,102,.05);
+  --shadow-lift:0 18px 44px rgba(31,56,102,.16),0 4px 12px rgba(31,56,102,.08);
+  --ring:0 0 0 3px rgba(47,111,214,.16);
+}
+
+/* ---------- 页面底色与氛围 ---------- */
+body{letter-spacing:0;color:var(--ink);-webkit-font-smoothing:antialiased}
+.bg .stars{opacity:.26}
+.bg .grid{opacity:.7}
+.bg .glow{opacity:.32}
+.wrap{max-width:1680px;padding:16px 22px 34px}
+
+/* ---------- 顶栏：悬浮玻璃条 ---------- */
+header{
+  position:sticky;top:12px;z-index:40;
+  padding:10px 16px;margin:0 0 20px;
+  border-radius:18px;
+  background:linear-gradient(180deg,rgba(255,255,255,.86),rgba(255,255,255,.68));
+  border:1px solid rgba(255,255,255,.9);
+  box-shadow:0 12px 32px rgba(31,56,102,.10),inset 0 1px 0 #fff;
+  backdrop-filter:blur(18px) saturate(1.25);-webkit-backdrop-filter:blur(18px) saturate(1.25);
+  gap:12px;
+}
+.logo{
+  width:48px;height:48px;border-radius:14px;
+  background:linear-gradient(140deg,#eaf3ff,#e4fbf0 60%,#f3edff);
+  border:1px solid rgba(96,130,200,.28);
+  box-shadow:0 8px 20px rgba(47,111,214,.16),inset 0 0 20px rgba(255,255,255,.9);
+}
+.logo::after{animation-duration:9s;opacity:.55}
+.brand h1{font-size:clamp(15px,1.45vw,19px);letter-spacing:0;font-weight:800}
+.brand .sub{font-size:10px;letter-spacing:2.6px;color:#8a98ae;margin-top:3px}
+.badge{
+  border-radius:999px;padding:4px 11px;font-size:10.5px;
+  border-color:rgba(21,153,87,.22);background:rgba(21,153,87,.07);color:#0f8a52;
+}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.85}
+.badge.blue{border-color:rgba(47,111,214,.22);background:rgba(47,111,214,.07);color:#2f6fd6}
+.header-right{gap:8px}
+.stat-chip{
+  border-radius:999px;padding:6px 12px;font-size:11px;
+  background:rgba(255,255,255,.85);border-color:rgba(120,145,190,.2);
+  box-shadow:inset 0 1px 0 #fff;color:#5a6a85;
+}
+.stat-chip b{color:#2f6fd6}
+.langbtn{
+  border-radius:999px;padding:7px 14px;font-size:12.5px;
+  background:#fff;border-color:rgba(120,145,190,.24);color:#42536f;
+}
+.langbtn:hover{border-color:#2f6fd6;color:#2f6fd6;box-shadow:0 8px 18px rgba(47,111,214,.16);transform:translateY(-1px)}
+.linkbtn{
+  border-radius:999px;padding:8px 14px;font-size:12.5px;font-weight:600;
+  background:rgba(255,255,255,.92);color:#42536f;border-color:rgba(120,145,190,.24);
+  box-shadow:inset 0 1px 0 #fff;
+}
+.linkbtn:hover{border-color:#2f6fd6;color:#2f6fd6;box-shadow:0 10px 22px rgba(47,111,214,.16);transform:translateY(-1px)}
+.linkbtn.ai{
+  background:linear-gradient(135deg,#7c5cf0,#4f7ff0);color:#fff;border-color:transparent;
+  box-shadow:0 10px 24px rgba(94,98,232,.30);
+}
+.linkbtn.ai:hover{color:#fff;filter:brightness(1.06);box-shadow:0 14px 30px rgba(94,98,232,.38)}
+
+/* ---------- 玻璃面板 ---------- */
+.glass{
+  background:linear-gradient(180deg,rgba(255,255,255,.86),rgba(255,255,255,.72));
+  border:1px solid rgba(255,255,255,.85);
+  box-shadow:var(--shadow),inset 0 1px 0 #fff;
+  backdrop-filter:blur(16px) saturate(1.15);-webkit-backdrop-filter:blur(16px) saturate(1.15);
+}
+.panel-title{
+  padding:13px 20px;font-size:12px;letter-spacing:2.4px;text-transform:uppercase;
+  color:#61718c;border-bottom:1px solid rgba(120,145,190,.16);
+}
+.panel-title .ico{
+  width:6px;height:18px;border-radius:4px;animation:none;
+  background:linear-gradient(180deg,#2f6fd6,#159957);box-shadow:none;
+}
+
+/* ---------- 控制台 ---------- */
+.ops{overflow:hidden}
+.ops-body{padding:18px 20px 16px}
+.row{gap:10px}
+.seg{
+  padding:4px;border-radius:12px;background:#eef2f9;border-color:rgba(120,145,190,.16);
+  box-shadow:inset 0 1px 2px rgba(31,56,102,.06);
+}
+.seg button{border-radius:9px;padding:8px 16px;font-size:12.5px;color:#61718c}
+.seg button:hover{background:#fff;color:#22314e}
+.seg button.on{
+  background:#fff;color:#0f8a52;border:1px solid rgba(21,153,87,.22);
+  box-shadow:0 4px 12px rgba(21,153,87,.14);margin:0;
+}
+.datepick{border-radius:10px;background:#fff;border-color:rgba(120,145,190,.22)}
+.btn{
+  border-radius:11px;border-color:rgba(120,145,190,.24);
+  background:#fff;box-shadow:inset 0 1px 0 #fff;
+}
+.btn:hover{box-shadow:0 10px 24px rgba(31,56,102,.14);transform:translateY(-1px)}
+.btn.big{
+  border-radius:14px;font-size:16px;letter-spacing:.5px;padding:14px 24px;
+  background:linear-gradient(135deg,#12a05c,#0d9b7a 55%,#0e8fa8);
+  box-shadow:0 12px 28px rgba(16,140,90,.28),inset 0 1px 0 rgba(255,255,255,.28);
+}
+.btn.big:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.34);box-shadow:0 18px 38px rgba(16,140,90,.34)}
+.btn.big:active{transform:translateY(0)}
+.btn.sm-grid{
+  border-radius:12px;border-color:rgba(120,145,190,.2);background:#fff;min-height:78px;
+  gap:7px;color:#37496a;font-weight:600;
+}
+.btn.sm-grid .e{
+  width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-size:18px;
+  background:linear-gradient(140deg,#eef4ff,#e9f8f0);border:1px solid rgba(120,145,190,.14);
+}
+.btn.sm-grid:hover{border-color:rgba(21,153,87,.45);box-shadow:0 12px 26px rgba(21,153,87,.14);transform:translateY(-2px)}
+.ops-status{
+  border:1px solid rgba(120,145,190,.16);background:rgba(255,255,255,.5);
+  border-radius:12px;padding:8px 10px;gap:8px;
+}
+.ops-status span{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 11px;border-radius:999px;background:#fff;
+  border:1px solid rgba(120,145,190,.16);font-size:11px;color:#68788f;
+}
+.progress{height:24px;border-radius:12px;background:#eef2f9;border-color:rgba(120,145,190,.18)}
+.progress .bar{border-radius:12px}
+.progress .pct{font-size:10.5px;letter-spacing:.4px}
+
+/* ---------- 内容区与列表 ---------- */
+.fav-panel,.his-panel{background:#fff;border-radius:14px}
+.fav-item,.his-item{border-radius:12px;border:1px solid rgba(120,145,190,.16);background:#fff}
+.fav-item:hover,.his-item:hover{box-shadow:0 10px 24px rgba(31,56,102,.08)}
+
+/* ---------- 弹窗 ---------- */
+.overlay{background:rgba(18,28,48,.46);backdrop-filter:blur(10px)}
+.modal{
+  border-radius:20px;border:1px solid rgba(255,255,255,.9);
+  box-shadow:0 30px 80px rgba(15,28,52,.30),0 2px 0 rgba(255,255,255,.6) inset;
+  background:linear-gradient(170deg,#fff,#f5f8fd);
+}
+.modal-head{
+  padding:16px 24px;font-size:15.5px;letter-spacing:.2px;
+  background:linear-gradient(120deg,rgba(47,111,214,.07),rgba(21,153,87,.06));
+  border-bottom:1px solid rgba(120,145,190,.16);
+}
+.modal-body{padding:20px 24px 22px}
+.modal .close,.modal .minbtn{
+  width:30px;height:30px;border-radius:50%;border-color:rgba(120,145,190,.22);
+  background:#fff;color:#7d8ba1;font-size:13px;
+}
+.modal .close:hover{color:#e5484d;border-color:rgba(229,72,77,.4);background:#fff6f6}
+.modal .minbtn:hover{color:#2f6fd6;border-color:rgba(47,111,214,.4);background:#f6f9ff}
+.form-row label{font-size:11.5px;letter-spacing:.4px;color:#68788f}
+.form-row input[type=text],.form-row input[type=password],.form-row input[type=time],.form-row input[type=date],
+.form-row select,.fav-add input{
+  border-radius:10px;border-color:rgba(120,145,190,.24);background:#fff;
+  box-shadow:inset 0 1px 2px rgba(31,56,102,.04);
+}
+.form-row input:focus,.form-row select:focus,.fav-add input:focus{
+  border-color:#2f6fd6;box-shadow:var(--ring);outline:none;
+}
+.form-row .hint{color:#8a98ae}
+.actions{
+  gap:8px;padding-top:14px;margin-top:18px;
+  border-top:1px solid rgba(120,145,190,.14);
+}
+.btn.ok{
+  background:linear-gradient(135deg,#12a05c,#0e8fa8);border-color:transparent;color:#fff;
+  box-shadow:0 10px 24px rgba(16,140,90,.26);
+}
+.btn.ok:hover{filter:brightness(1.05);box-shadow:0 14px 30px rgba(16,140,90,.34)}
+.btn.ghost{background:#fff;color:#46587a;border-color:rgba(120,145,190,.24)}
+.btn.ghost:hover{border-color:#2f6fd6;color:#2f6fd6;background:#f8fbff}
+.mtab{border-radius:9px;font-size:12.5px}
+.mtab.on{background:#fff;box-shadow:0 4px 12px rgba(31,56,102,.08)}
+.radios .radio,.check{color:#42536f}
+
+/* ---------- 部署专属 ---------- */
+.dp-status{
+  border-radius:12px;border-color:rgba(120,145,190,.2);
+  background:linear-gradient(180deg,#fff,#f7f9fd);
+  box-shadow:inset 0 1px 0 #fff;padding:10px 14px;
+}
+.dp-log{
+  border-radius:12px;background:linear-gradient(180deg,#0e1929,#0a1220);
+  border-color:rgba(120,145,190,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+}
+.dp-result{border-radius:12px}
+.dp-adv{border-radius:12px;background:rgba(247,249,253,.8)}
+.ld-cand{border-radius:12px;box-shadow:0 2px 8px rgba(31,56,102,.05)}
+.dp-chip{border-radius:999px}
+
+/* ---------- 右下角最小化卡 ---------- */
+.mini-card{
+  border-radius:16px;background:rgba(255,255,255,.96);
+  border-color:rgba(255,255,255,.9);
+  box-shadow:0 20px 46px rgba(20,36,64,.24),inset 0 1px 0 #fff;
+}
+.mini-card .mini-title{font-size:12px;letter-spacing:.3px}
+.mini-card .mini-acts .mini-btn{border-radius:999px}
+
+/* ---------- 页脚与提示 ---------- */
+footer{
+  margin-top:34px;padding-top:18px;border-top:1px solid rgba(120,145,190,.16);
+  color:#8a98ae;letter-spacing:.4px;font-size:11.5px;
+}
+.toast{
+  border-radius:12px;background:rgba(255,255,255,.96);color:#22314e;
+  box-shadow:0 16px 40px rgba(20,36,64,.22);border:1px solid rgba(255,255,255,.9);
+  padding:10px 18px;font-size:13px;
+}
+
+/* ---------- 可用性 ---------- */
+:where(button,a,input,select,summary,[tabindex]):focus-visible{
+  outline:2px solid rgba(47,111,214,.55);outline-offset:2px;border-radius:8px;
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
+
+/* ---------- 响应式 ---------- */
+@media(max-width:1100px){
+  .wrap{padding:14px 16px 30px}
+  header{top:8px;padding:9px 12px}
+}
+@media(max-width:900px){
+  .header-right{width:100%;margin-left:0;justify-content:flex-start}
+  .stat-chip{display:none}
+  .grid8{grid-template-columns:repeat(auto-fit,minmax(112px,1fr))}
+  .btn.big{min-width:100%}
+  .modal{max-height:92vh;border-radius:16px}
+  .modal-body{padding:16px 16px 18px}
+}
+@media(max-width:620px){
+  header{position:static;backdrop-filter:none}
+  .brand .sub{display:none}
+  .ops-status span{font-size:10.5px}
+}
+
+</style>
+</head>
+<body>
+<div class="bg">
+  <div class="stars"></div>
+  <div class="grid"></div>
+  <div class="glow g1"></div><div class="glow g2"></div><div class="glow g3"></div>
+  <div class="scanline"></div>
+</div>
+
+<div class="wrap">
+
+  <div class="stack">
+    <div class="stack-left">
+  <!-- ===== 顶栏 ===== -->
+  <header>
+    <div class="brand">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"></path>
+        </svg>
+      </div>
+      <div>
+        <h1 data-i18n="appName">GitHub 热门项目分析报告生成器</h1>
+        <div class="sub" data-i18n="appSub">WEB EDITION · 零 API · 完全开放二次开发</div>
+      </div>
+    </div>
+    <div class="badge">v2.31.0</div>
+    <div class="badge blue" data-i18n="badgeZero">ZERO API</div>
+    <div class="header-right">
+      <div class="stat-chip">⚙ <b data-i18n="stEngine">引擎</b>：<span id="stEngine">auto</span></div>
+      <div class="stat-chip">🌐 <span data-i18n="stProxy">代理</span>：<span id="stProxy">未设置</span></div>
+      <button class="linkbtn" onclick="openTool()">📦 <span data-i18n="btnTool">下载工具</span></button>
+      <button class="linkbtn" onclick="openHello()">👋 hello</button>
+      <button class="linkbtn" onclick="openAccelerator()">🚀 <span data-i18n="btnAcc">GitHub 加速器</span></button>
+      <button class="langbtn" id="langBtn" onclick="toggleLang()">🌐 <span id="langLabel">EN</span></button>
+    </div>
+  </header>
+
+  <!-- ===== 操作面板 ===== -->
+  <section class="ops glass">
+    <div class="panel-title"><span class="ico"></span><span data-i18n="opsTitle">控制台</span><span style="font-size:11px;color:var(--dim);font-family:'Share Tech Mono',monospace">CONSOLE</span></div>
+    <div class="ops-body">
+      <div class="row">
+        <div class="seg" id="periodSeg">
+          <button data-p="daily" class="" onclick="setPeriod('daily')">🔥 <span data-i18n="periodDaily">本日热榜</span></button>
+          <button data-p="weekly" onclick="setPeriod('weekly')">📅 <span data-i18n="periodWeekly">本周热榜</span></button>
+          <button data-p="monthly" onclick="setPeriod('monthly')" class="on">🗓 <span data-i18n="periodMonthly">本月热榜</span></button>
+          <button data-p="custom" onclick="setPeriod('custom')">📆 <span data-i18n="periodCustom">自定义日期</span></button>
+        </div>
+        <div class="datepick" id="datepick">
+          <span data-i18n="datePick">选择日期</span>
+          <input type="date" id="customDate">
+        </div>
+        <button class="btn big" id="btnGen" onclick="generateReport()">🚀 <span data-i18n="btnGen">生成分析报告</span></button>
+        <button class="btn big ghost" id="btnCancelGen" style="display:none" onclick="cancelGenerate()">⛔ <span data-i18n="btnCancelGen">取消</span></button>
+      </div>
+      <div class="progress" id="progress"><div class="bar" id="bar"></div><div class="pct" id="pct">0%</div></div>
+      <div class="tools-fold" id="toolsFold">
+        <button class="fold-head" type="button" onclick="toggleToolsFold()" aria-expanded="false" aria-controls="toolsGrid">
+          <span class="fi">🧰</span>
+          <span class="ft" data-i18n="toolsMore">更多工具</span>
+          <span class="fh" data-i18n="toolsHint">部署 / 导出 / 历史 / 定时 / 连通性 / 二次开发</span>
+          <span class="fc" id="toolsCount">10</span>
+          <span class="chev">▾</span>
+        </button>
+        <div class="grid8" id="toolsGrid">
+          <button class="btn sm-grid" type="button" onclick="doExport()"><span class="e">📤</span><span data-i18n="btnExport">批量导出</span></button>
+          <button class="btn sm-grid" type="button" onclick="openFav()"><span class="e">⭐</span><span data-i18n="btnFav">收藏对比</span></button>
+          <button class="btn sm-grid" type="button" onclick="openHistory()"><span class="e">🕘</span><span data-i18n="btnHistory">报告历史</span></button>
+          <button class="btn sm-grid" type="button" onclick="openSchedule()"><span class="e">⏰</span><span data-i18n="btnSchedule">定时报告</span></button>
+          <button class="btn sm-grid" type="button" onclick="connTest()"><span class="e">🔌</span><span data-i18n="btnConn">连通性检测</span></button>
+          <button class="btn sm-grid" type="button" onclick="openDev()"><span class="e">🔧</span><span data-i18n="btnDev">二次开发</span></button>
+          <button class="btn sm-grid" type="button" id="btnDeploy" onclick="openDeploy()"><span class="e">🚀</span><span data-i18n="btnDeploy">一键部署</span></button>
+          <button class="btn sm-grid" type="button" id="aiDeployBtn" onclick="openAiDeploy()"><span class="e">🤖</span><span data-i18n="btnAiDeploy">AI 部署</span></button>
+          <button class="btn sm-grid" type="button" onclick="openSettings()"><span class="e">⚙</span><span data-i18n="btnSettings">设置</span></button>
+          <button class="btn sm-grid" type="button" onclick="openReports()"><span class="e">📂</span><span data-i18n="btnDir">报告目录</span></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+      </div>
+
+  <!-- ===== 壁纸视频台：html/壁纸 里放什么就播什么 ===== -->
+  <section class="wall-stage">
+    <div class="wall-frame" id="wallFrame">
+      <video id="wallVideo" class="wall-video" playsinline muted preload="metadata"></video>
+      <div class="wall-empty" id="wallEmpty">
+        <div>🖼️ <b>html/壁纸</b> 里还没有视频<br>
+        把 mp4 / webm 放进去，这里会自动循环播放<br>
+        <code>壁纸/</code> 放多个视频会自动轮播</div>
+      </div>
+      <div class="wall-bar" id="wallBar">
+        <span class="wall-name" id="wallName">fa19ce0974f740c3544d9a8a09e6ce22.mp4</span>
+        <span class="wall-grow"></span>
+        <button class="wall-btn wall-pin" id="wallPin" title="选定此视频并循环播放，不再切换">📌 选定</button>
+        <button class="wall-btn" id="wallPrev" title="上一个">⏮</button>
+        <button class="wall-btn" id="wallPlay" title="播放 / 暂停">⏸</button>
+        <button class="wall-btn" id="wallNext" title="下一个">⏭</button>
+        <button class="wall-btn" id="wallSound" title="声音">🔇</button>
+        <button class="wall-btn" id="wallFull" title="全屏">⛶</button>
+      </div>
+    </div>
+  </section>
+  </div>
+
+  <!-- ===== 收藏对比（弹窗） ===== -->
+  <div class="overlay" id="ovFav">
+    <div class="modal glass" style="width:min(1180px,96vw)">
+      <button class="close" onclick="closeModal('ovFav')">✕</button>
+      <div class="modal-head">⭐ <span data-i18n="tabFav">收藏对比</span></div>
+      <div class="modal-body" style="max-height:78vh;overflow:auto">
+        <div class="fav-panel glass" style="box-shadow:none">
+          <div class="panel-title"><span class="ico" style="background:var(--yellow);box-shadow:0 0 10px var(--yellow)"></span><span data-i18n="favTitle">收藏仓库</span></div>
+          <div class="fav-body">
+            <div class="fav-add">
+              <input id="favInput" placeholder="owner/repo · 如 alibaba/open-code-review" data-i18n-ph="favPh">
+              <button class="btn ok" onclick="addFav()">＋</button>
+            </div>
+            <div class="fav-list" id="favList"><div class="cmp-tip">暂无收藏，输入 owner/repo 添加</div></div>
+            <div class="cmp-tip"><b data-i18n="favTip1">💡 提示</b><span data-i18n="favTip2">：选中任意两个收藏项后，下方会自动并排对比展示它们在最近报告中的完整分析。</span></div>
+          </div>
+        </div>
+        <div class="fav-panel glass" style="box-shadow:none;margin-top:14px">
+          <div class="panel-title"><span class="ico" style="background:var(--blue);box-shadow:0 0 10px var(--blue)"></span><span data-i18n="cmpTitle">对比视图</span></div>
+          <div class="fav-body" id="compareArea">
+            <div class="empty" style="padding:40px 16px"><div class="big" style="font-size:38px">⚖️</div><p data-i18n="cmpEmpty">选择两个收藏项目开始对比</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 报告历史（弹窗） ===== -->
+  <div class="overlay" id="ovHistory">
+    <div class="modal glass" style="width:min(820px,96vw)">
+      <button class="close" onclick="closeModal('ovHistory')">✕</button>
+      <div class="modal-head">🕘 <span data-i18n="tabHistory">报告历史</span></div>
+      <div class="modal-body" style="max-height:74vh;overflow:auto">
+        <div class="his-body" id="hisList">
+    <div class="his-item">
+      <div class="doc">📄</div>
+      <div class="info"><div class="nm">GitHub热门分析报告_本月_2026-10-28-3</div><div class="tm">2026-10-28 23:13</div></div>
+      <div class="acts">
+        <button class="mini-btn gh" onclick="openReport('GitHub热门分析报告_本月_2026-10-28-3.html')">🌐 打开 HTML</button>
+        <button class="mini-btn" onclick="openReport('GitHub热门分析报告_本月_2026-10-28-3.md')">📝 打开 Markdown</button>
+        <button class="mini-btn" onclick="delHistory('GitHub热门分析报告_本月_2026-10-28-3.md')">🗑 删除</button>
+      </div>
+    </div>
+    <div class="his-item">
+      <div class="doc">📄</div>
+      <div class="info"><div class="nm">GitHub热门分析报告_本月_2026-10-28-2</div><div class="tm">2026-10-28 23:11</div></div>
+      <div class="acts">
+        <button class="mini-btn gh" onclick="openReport('GitHub热门分析报告_本月_2026-10-28-2.html')">🌐 打开 HTML</button>
+        <button class="mini-btn" onclick="openReport('GitHub热门分析报告_本月_2026-10-28-2.md')">📝 打开 Markdown</button>
+        <button class="mini-btn" onclick="delHistory('GitHub热门分析报告_本月_2026-10-28-2.md')">🗑 删除</button>
+      </div>
+    </div>
+    <div class="his-item">
+      <div class="doc">📄</div>
+      <div class="info"><div class="nm">GitHub热门分析报告_本月_2026-10-28</div><div class="tm">2026-10-28 22:44</div></div>
+      <div class="acts">
+        <button class="mini-btn gh" onclick="openReport('GitHub热门分析报告_本月_2026-10-28.html')">🌐 打开 HTML</button>
+        <button class="mini-btn" onclick="openReport('GitHub热门分析报告_本月_2026-10-28.md')">📝 打开 Markdown</button>
+        <button class="mini-btn" onclick="delHistory('GitHub热门分析报告_本月_2026-10-28.md')">🗑 删除</button>
+      </div>
+    </div></div>
+      </div>
+    </div>
+  </div>
+
+
+
+
+  <!-- ===== 运行日志坞（右下角 📜 展开） ===== -->
+  <button class="log-fab new" id="logFab" onclick="toggleLogDock()" title="运行日志">📜</button>
+  <div class="log-dock" id="logDock" hidden="">
+    <div class="term-head" onclick="toggleTerm()">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <div class="ttl">loomy@github-trending <span class="live">●</span></div>
+      <div class="tools">
+        <button class="mini-btn" onclick="event.stopPropagation();clearLog()">🧹 <span data-i18n="clearLog">清空日志</span></button>
+        <button class="mini-btn" onclick="event.stopPropagation();toggleLogDock(false)">✕</button>
+      </div>
+    </div>
+    <div class="term-body" id="termBody">
+  </div>
+
+
+  <footer>
+    <span data-i18n="foot1">本工具零 API、零 Key 也能完整出报告 · 数据抓取走多镜像容灾</span><br>
+    <span data-i18n="foot2">完全开放二次开发 · 内置分析引擎 + 免费翻译通道 · 配置仅存本机</span>
+  </footer>
+</div>
+
+<!-- ===== 设置模态框 ===== -->
+<div class="overlay" id="ovSettings">
+  <div class="modal glass">
+    <button class="close" onclick="closeModal('ovSettings')">✕</button>
+    <div class="modal-head">⚙ <span data-i18n="settingsTitle">设置</span></div>
+    <div class="modal-body">
+      <div class="mtabs">
+        <button class="mtab on" onclick="mtab(this,0)">🤖 <span data-i18n="setApiTab">大模型 API</span></button>
+        <button class="mtab" onclick="mtab(this,1)">🌐 <span data-i18n="setNetTab">网络</span></button>
+        <button class="mtab" onclick="mtab(this,2)">ℹ <span data-i18n="setAboutTab">关于 / 二次开发</span></button>
+      </div>
+      <div class="mview on" id="mv0">
+        <div class="form-row"><label data-i18n="setApiUrl">API 地址</label><input type="text" id="cfgApiBase" placeholder="https://api.deepseek.com"><div class="hint" data-i18n="setApiUrlHint">DeepSeek / OpenAI / 通义 / 智谱 / Kimi 等兼容接口地址</div></div>
+        <div class="form-row"><label data-i18n="setApiModel">模型名称</label><input type="text" id="cfgApiModel" placeholder="deepseek-chat"><div class="hint" data-i18n="setApiModelHint">对应平台的模型名，如 gpt-4o-mini、glm-4.6</div></div>
+        <div class="form-row"><label data-i18n="setApiKey">API Key（仅保存在本机 config.json）</label><input type="password" id="cfgApiKey" placeholder="sk-..."><div class="hint" data-i18n="setApiKeyHint">不填 Key 完全可用（内置规则引擎出报告）；填了升级为 AI 逐项目深度分析</div></div>
+        <div class="form-row"><label data-i18n="setEngine">分析引擎</label>
+          <div class="radios">
+            <label class="radio"><input type="radio" name="engine" value="auto" checked=""> <span data-i18n="setEngineAuto">自动（有 Key 用 AI，无 Key 用内置）</span></label>
+            <label class="radio"><input type="radio" name="engine" value="ai"> <span data-i18n="setEngineAi">仅 AI（需填 Key）</span></label>
+            <label class="radio"><input type="radio" name="engine" value="builtin"> <span data-i18n="setEngineBuiltin">仅内置规则引擎</span></label>
+          </div>
+        </div>
+        <div class="actions" style="justify-content:flex-start">
+          <button class="btn ghost" onclick="testApi()">🔌 <span data-i18n="btnTestApi">测试大模型接口</span></button>
+        </div>
+      </div>
+      <div class="mview" id="mv1">
+        <div class="form-row"><label data-i18n="setProxy">代理地址（HTTP）</label><input type="text" id="cfgProxy" placeholder="http://127.0.0.1:7890"><div class="hint" data-i18n="setProxyHint">开了 Clash / 加速器后填这里；留空自动使用系统代理</div></div>
+        <div class="form-row"><label data-i18n="setTopN">每期报告项目数 Top N</label><input type="text" id="cfgTopN" placeholder="10"><div class="hint" data-i18n="setTopNHint">默认 10，范围 5 ~ 30</div></div>
+        <div class="form-row"><label data-i18n="setSource">榜单数据来源</label>
+          <div class="radios">
+            <label class="radio"><input type="radio" name="sourceMode" value="auto" checked=""> <span data-i18n="setSourceAuto">自动（多源并发，官方优先）</span></label>
+            <label class="radio"><input type="radio" name="sourceMode" value="official"> <span data-i18n="setSourceOfficial">GitHub 官方（最权威）</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="mview" id="mv2">
+        <div class="about-card"><h4>🔥 <span data-i18n="aboutName">GitHub 热门项目分析报告生成器</span></h4>
+          <p><b>v2.31.0 · Web 版（本地 Node 服务）</b> ｜ <span data-i18n="aboutDesc">零 API、零 Key 完整出报告；多数据源并发探测 + 离线缓存兜底；七问中文深度分析 + 开源协议判定；Markdown + HTML 双格式导出。</span></p>
+          <p style="font-size:12px;color:var(--dim)"><code id="aboutDir">E:\pc\桌面\github\html</code></p>
+          <div class="links">
+            <a class="mini-btn gh" href="https://github.com/" target="_blank" data-i18n="aboutGh">GitHub 原地址</a>
+            <a class="mini-btn gitee" href="https://gitee.com/" target="_blank" data-i18n="aboutGitee">Gitee 备用地址</a>
+            <a class="mini-btn mirror" href="https://kkgithub.com/" target="_blank" data-i18n="aboutMirror">加速镜像</a>
+          </div>
+          <p style="margin-top:8px;font-size:12px;color:var(--dim)" data-i18n="aboutUserHint">发布后请将 &lt;你的用户名&gt; 替换为实际账号名</p>
+        </div>
+        <div class="about-card"><h4>🚀 <span data-i18n="aboutAccTitle">GitHub 加速器推荐</span></h4>
+          <p data-i18n="aboutAccDesc">推荐使用 steamcommunity_302（GitHub 加速器），下载安装后即可正常访问 GitHub；也可直接点主界面「🚀 GitHub 加速器」按钮打开下载地址。</p>
+          <div class="links"><a class="mini-btn" style="color:var(--orange);border-color:rgba(240,136,62,.4)" href="https://pan.baidu.com/s/14bpQXNGXAazaxuHJY-PBUw?pwd=ve87" target="_blank">百度网盘 · 提取码 ve87</a></div>
+        </div>
+        <div class="about-card"><h4>🔧 <span data-i18n="aboutDevTitle">完全开放二次开发</span></h4>
+          <p data-i18n="aboutDevDesc">源码 server.js（HTTP/API/定时任务/CLI）+ engine.js（抓榜/解析/分析/报告）；data/*.json（知识库 / 词典 / 分类模板 / 镜像源）不改代码即可扩展。</p>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn ghost" onclick="closeModal('ovSettings')" data-i18n="btnCancel">取消</button>
+        <button class="btn ok" onclick="saveSettings()">✓ <span data-i18n="btnSave">保存设置</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 一键部署 ===== -->
+<div class="overlay" id="ovDeploy">
+  <div class="modal glass" style="width:min(820px,96vw)">
+    <button class="close" onclick="closeModal('ovDeploy')">✕</button>
+    <button class="minbtn" onclick="miniSet('deploy', true)" title="最小化到右下角（部署继续进行）">—</button>
+    <div class="modal-head">🚀 <span data-i18n="dpTitle">一键部署</span>
+      <span style="font-size:10.5px;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-left:8px;letter-spacing:1px">LOCAL PATH · ONE-CLICK</span>
+    </div>
+    <div class="modal-body">
+
+      <!-- 模式切换 -->
+      <div class="seg" id="dpModeSeg" style="margin-bottom:14px">
+        <button class="on" data-m="local" onclick="dpSetMode('local')">💻 本地路径部署</button>
+        <button data-m="coolify" onclick="dpSetMode('coolify')">☁ Coolify 远程部署</button>
+      </div>
+
+      <!-- ===================== 本地路径部署 ===================== -->
+      <div id="ldPane">
+        <!-- ① 项目 -->
+        <div class="form-row">
+          <label>① <span>项目名称 / 仓库网址</span>
+            <span class="hint" style="display:inline;margin-left:4px">owner/repo、完整网址，或直接输入项目名（自动搜索）</span>
+          </label>
+          <input type="text" id="ldInput" placeholder="例如：mdn/beginner-html-site 或 https://github.com/vercel/next-learn">
+          <div class="hint" id="ldResolve"></div>
+          <div id="ldCands" class="ld-cands"></div>
+        </div>
+
+        <!-- ② 目标路径 -->
+        <div class="form-row">
+          <label>② 部署目标地址 <span class="hint" style="display:inline;margin-left:4px">本地文件夹绝对路径</span></label>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="ldTarget" placeholder="E:\pc\桌面\github（父目录，会自动建项目文件夹）" style="flex:1">
+            <button class="mini-btn gh" onclick="ldPickFolder()" title="打开系统文件夹选择框">📁 浏览</button>
+          </div>
+          <div class="hint" id="ldPathState">填「父目录」即可：会自动在其中新建以项目名命名的文件夹（如 E:\pc\桌面\github → E:\pc\桌面\github\项目名）。不存在会自动创建。</div>
+        </div>
+
+        <!-- ③ 高级 -->
+        <details class="dp-adv" id="ldAdv">
+          <summary>③ 高级选项（分支 / 依赖 / 构建 / 非空目录处理）</summary>
+          <div class="dp-adv-body">
+            <div class="form-row">
+              <label>分支（留空用默认分支）</label>
+              <input type="text" id="ldBranch" placeholder="main">
+            </div>
+            <div class="form-row">
+              <label>非空目标目录</label>
+              <select id="ldMode" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:9px;color:var(--text);padding:10px 13px;font-size:13px;outline:none">
+                <option value="auto">自动（推荐）：在目标地址下新建「项目名」文件夹</option>
+                <option value="direct">直接写入目标地址（不建子文件夹）</option>
+                <option value="merge">合并到「项目名」文件夹（保留已有文件）</option>
+              </select>
+            </div>
+            <label class="check"><input type="checkbox" id="ldInstall" checked=""> <span>自动安装依赖（npm / pip / go）</span></label>
+            <label class="check"><input type="checkbox" id="ldBuild" checked=""> <span>自动执行构建（package.json 有 build 脚本时）</span></label>
+          </div>
+        </details>
+
+        <!-- 进度 -->
+        <div class="progress" id="ldProgress"><div class="bar" id="ldBar"></div><div class="pct" id="ldPct">0%</div></div>
+        <div class="dp-log" id="ldLog"></div>
+        <div class="dp-result" id="ldResult" style="display:none"></div>
+
+        <div class="actions">
+          <button class="btn ghost ld-sum-btn" id="ldSummaryBtn" onclick="ldOpenSummary()" disabled="" title="本次部署没有发现问题">
+            📋 问题总结<span class="ld-sum-badge" id="ldSumBadge" style="display:none">0</span>
+          </button>
+          <button class="btn ghost" onclick="window.open('/deploy-guide.html','_blank')">📖 部署说明</button>
+          <button class="btn ghost" onclick="ldOpenHistory()">🕘 部署记录</button>
+          <button class="btn ghost" id="ldCancelBtn" style="display:none" onclick="ldCancel()">⛔ 取消</button>
+          <button class="btn ghost" id="ldStopAllBtn" onclick="ldStopAll()" title="取消当前任务并清理所有残留进程与暂存目录">⏹ 停止所有部署</button>
+          <button class="btn ok" id="ldStartBtn" onclick="ldStart()">🚀 开始部署</button>
+        </div>
+      </div>
+
+      <!-- ===================== Coolify 远程部署 ===================== -->
+      <div id="dpCoolifyPane" style="display:none">
+      <div class="dp-status" id="dpStatus">
+        <span class="dot"></span>
+        <span class="grow" id="dpStatusTxt" data-i18n="dpChecking">正在检测 Coolify 服务…</span>
+        <button class="mini-btn" id="dpTokenBtn" style="display:none" onclick="dpToggleToken()">🔑 配置 Token</button>
+      </div>
+
+      <!-- 首次配置 Token -->
+      <div id="dpTokenBox" style="display:none">
+        <div class="form-row">
+          <label data-i18n="dpBase">Coolify 面板地址</label>
+          <input type="text" id="dpBase" value="http://localhost:8000" placeholder="http://localhost:8000">
+        </div>
+        <div class="form-row">
+          <label>API Token</label>
+          <input type="text" id="dpToken" placeholder="粘贴 Coolify → Keys &amp; Tokens → API Tokens 里创建的 Token">
+          <div class="hint" data-i18n="dpTokenHint">Token 仅保存在本机 config.json，不会下发给浏览器端脚本。</div>
+        </div>
+        <div class="actions" style="margin-top:10px">
+          <button class="btn ok" onclick="dpSaveToken()">💾 <span data-i18n="dpSaveToken">保存并检测</span></button>
+        </div>
+      </div>
+
+      <!-- ① 项目地址 -->
+      <div class="form-row">
+        <label>① <span data-i18n="dpRepo">要部署的项目</span>
+          <span class="hint" style="display:inline;margin-left:4px">owner/repo 或完整仓库网址（GitHub 公开仓库）</span>
+        </label>
+        <input type="text" id="dpRepo" placeholder="例如：vercel/next-learn 或 https://github.com/vercel/next-learn">
+        <div class="hint" id="dpRepoInfo"></div>
+      </div>
+
+      <!-- ② 部署目标地址 -->
+      <div class="form-row">
+        <label>② <span data-i18n="dpTarget">部署目标地址</span></label>
+        <div class="seg" id="dpTargetSeg">
+          <button class="on" data-t="domain" onclick="dpSetTarget('domain')">🌐 自动域名</button>
+          <button data-t="port" onclick="dpSetTarget('port')">🔌 本机端口</button>
+          <button data-t="custom" onclick="dpSetTarget('custom')">✏️ 自定义域名</button>
+        </div>
+        <div style="margin-top:9px">
+          <input type="text" id="dpDomain" placeholder="my-app.localhost">
+          <input type="text" id="dpPort" placeholder="8080" style="display:none">
+        </div>
+        <div class="hint" id="dpTargetHint">自动生成 http://项目名.localhost（Chrome/Edge 会把 *.localhost 解析到本机）</div>
+      </div>
+
+      <!-- ③ 高级选项 -->
+      <details class="dp-adv">
+        <summary>③ <span data-i18n="dpAdvanced">高级选项</span>（分支 / 构建方式 / 容器端口）</summary>
+        <div class="dp-adv-body">
+          <div class="form-row">
+            <label data-i18n="dpBranch">分支</label>
+            <input type="text" id="dpBranch" placeholder="main">
+          </div>
+          <div class="form-row">
+            <label data-i18n="dpPack">构建方式</label>
+            <select id="dpPack" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:9px;
+              color:var(--text);padding:10px 13px;font-size:13px;outline:none;font-family:'Share Tech Mono',monospace">
+              <option value="" data-i18n="dpPackAuto">自动识别（Nixpacks）</option>
+              <option value="nixpacks">Nixpacks</option>
+              <option value="dockerfile">Dockerfile</option>
+              <option value="dockercompose">Docker Compose</option>
+              <option value="static">Static（纯静态站点）</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label data-i18n="dpCport">容器端口（应用在容器内监听的端口）</label>
+            <input type="text" id="dpCport" placeholder="3000">
+          </div>
+        </div>
+      </details>
+
+      <!-- 进度 + 日志 -->
+      <div class="progress" id="dpProgress"><div class="bar" id="dpBar"></div><div class="pct" id="dpPct">0%</div></div>
+      <div class="dp-log" id="dpLog"></div>
+      <div class="dp-result" id="dpResult" style="display:none"></div>
+
+      <div class="actions">
+        <button class="btn ghost" onclick="openCoolifyGuide()">📖 <span data-i18n="dpGuide">部署指南</span></button>
+        <button class="btn ghost" id="dpCancelBtn" style="display:none" onclick="dpCancel()">⛔ <span data-i18n="dpCancel">取消</span></button>
+        <button class="btn ok" id="dpStartBtn" onclick="dpStart()">🚀 <span data-i18n="dpStart">开始部署</span></button>
+      </div>
+      </div><!-- /dpCoolifyPane -->
+    </div>
+  </div>
+</div>
+
+<!-- ===== AI 部署（DeepSeek Harness） ===== -->
+<div class="overlay" id="ovAiDeploy">
+  <div class="modal glass" style="width:min(800px,96vw)">
+    <button class="close" onclick="closeModal('ovAiDeploy')">✕</button>
+    <button class="minbtn" onclick="miniSet('ai', true)" title="最小化到右下角（部署继续进行）">—</button>
+    <div class="modal-head">🤖 AI 部署
+      <span style="font-size:10.5px;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-left:8px;letter-spacing:1px">DEEPSEEK HARNESS</span>
+    </div>
+    <div class="modal-body">
+      <div class="dp-status" id="aiCliStatus"><span class="dot"></span><span id="aiCliText">正在检测 DeepSeek Harness…</span></div>
+
+      <div class="form-row">
+        <label>① 项目名称 / 仓库网址
+          <span class="hint" style="display:inline;margin-left:4px">完整 URL、owner/repo，或只写项目名（由 AI 搜索确定）</span>
+        </label>
+        <input type="text" id="aiProject" placeholder="例如：https://github.com/vercel/next-learn 或 mdn/beginner-html-site">
+      </div>
+
+      <div class="form-row">
+        <label>② 本地文件夹绝对路径
+          <span class="hint" style="display:inline;margin-left:4px">不存在会自动创建</span>
+        </label>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="aiTarget" placeholder="例如：E:\pc\桌面\deploy-demo" style="flex:1">
+          <button class="mini-btn gh" onclick="aiPickFolder()" title="打开系统文件夹选择框">📁 浏览</button>
+        </div>
+        <div class="hint">目录已存在且非空时，AI 会在其中新建项目子目录，不会覆盖已有文件。</div>
+      </div>
+
+      <div class="progress" id="aiProgress"><div class="bar" id="aiBar"></div><div class="pct" id="aiPct">0%</div></div>
+      <div class="dp-log" id="aiLog"></div>
+      <div class="dp-result" id="aiResult" style="display:none"></div>
+
+      <div class="actions">
+        <button class="btn ghost" onclick="closeModal('ovAiDeploy')">关闭</button>
+        <button class="btn ghost" id="aiCancelBtn" style="display:none" onclick="aiCancel()">⛔ 取消</button>
+        <button class="btn ghost" onclick="openAiCfg()">⚙ 配置</button>
+        <button class="btn ok" id="aiStartBtn" onclick="aiStart()">🤖 开始 AI 部署</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== AI 部署 · 模型 Key 配置 ===== -->
+<div class="overlay" id="ovAiCfg">
+  <div class="modal glass" style="width:min(620px,96vw)">
+    <button class="close" onclick="closeModal('ovAiCfg')">✕</button>
+    <div class="modal-head">⚙ AI 部署 · 模型配置
+      <span style="font-size:10.5px;color:var(--dim);font-family:'Share Tech Mono',monospace;margin-left:8px;letter-spacing:1px">DEEPSEEK HARNESS</span>
+    </div>
+    <div class="modal-body">
+      <div class="dp-status" id="aiCfgStatus"><span class="dot"></span><span id="aiCfgStatusText">正在读取配置…</span></div>
+
+      <div class="form-row">
+        <label>模型 API Key
+          <span class="hint" style="display:inline;margin-left:4px">DeepSeek 平台申请，形如 sk-…</span>
+        </label>
+        <div style="display:flex;gap:8px">
+          <input type="password" id="aiCfgKey" placeholder="sk-****************" style="flex:1" autocomplete="off" spellcheck="false">
+          <button class="mini-btn" id="aiCfgShow" onclick="aiCfgToggleShow()">👁 显示</button>
+        </div>
+        <div class="hint">仅保存在本机 <code>config.json</code> 的 <code>ai_deploy.api_key</code>，不会上传；执行「AI 部署」时以 <code>DEEPSEEK_API_KEY</code> 环境变量传给 <code>dsh headless</code>。留空保存 = 不修改。</div>
+        <div class="hint" id="aiCfgTestResult" style="min-height:18px"></div>
+      </div>
+
+      <div class="form-row">
+        <label>部署权限模式
+          <span class="hint" style="display:inline;margin-left:4px">headless 没有“确认”弹窗，选默认才能真正动手</span>
+        </label>
+        <select id="aiCfgPerm" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:9px;color:var(--text);padding:10px 13px;font-size:13px;outline:none">
+          <option value="danger-full-access">自动（推荐）：允许 AI 写目标目录、装依赖、执行命令</option>
+          <option value="workspace-write">受限：仅当前目录可写（遇到需审批的操作会卡住）</option>
+        </select>
+        <div class="hint">默认 <code>danger-full-access</code>。AI 会在你填写的目标路径内工作，提示词里已禁止删除目录外文件和改系统设置；不信任目标项目时请改用普通「一键部署」。</div>
+      </div>
+
+      <div class="hint" id="aiCfgCli" style="font-size:11.5px;color:var(--dim);line-height:1.8"></div>
+
+      <div class="actions">
+        <button class="btn ghost" onclick="closeModal('ovAiCfg')">取消</button>
+        <button class="btn ghost" id="aiCfgTestBtn" onclick="aiCfgTest()">🔌 测试 Key</button>
+        <button class="btn ghost" onclick="aiCfgClear()">🗑 清除 Key</button>
+        <button class="btn ok" onclick="saveAiCfg()">✓ 保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 部署问题总结 ===== -->
+<div class="overlay" id="ovSummary">
+  <div class="modal glass" style="width:min(780px,96vw)">
+    <button class="close" onclick="closeModal('ovSummary')">✕</button>
+    <div class="modal-head">📋 部署问题总结 <span class="sum-verdict" id="sumVerdict" style="display:none"></span></div>
+    <div class="modal-body" id="sumBody"></div>
+    <div class="actions" style="padding:0 22px 18px">
+      <button class="btn ghost" onclick="ldCopySummary()">📋 复制总结</button>
+      <button class="btn ghost" onclick="ldSaveSummary()">💾 另存为 Markdown</button>
+      <button class="btn ok" onclick="closeModal('ovSummary')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 定时报告模态框 ===== -->
+<div class="overlay" id="ovSchedule">
+  <div class="modal glass" style="width:min(640px,96vw)">
+    <button class="close" onclick="closeModal('ovSchedule')">✕</button>
+    <div class="modal-head">⏰ <span data-i18n="schTitle">定时报告</span></div>
+    <div class="modal-body">
+      <label class="check"><input type="checkbox" id="schEnable"> <span data-i18n="schEnable">启用定时自动生成报告</span></label>
+      <div class="form-row"><label data-i18n="schFreq">执行频率</label>
+        <div class="radios">
+          <label class="radio"><input type="radio" name="sfreq" value="daily" checked=""> <span data-i18n="schDaily">每天</span></label>
+          <label class="radio"><input type="radio" name="sfreq" value="weekly"> <span data-i18n="schWeekly">每周</span></label>
+        </div>
+      </div>
+      <div class="form-row" id="weekRow" style="display:none"><label data-i18n="schDays">选择星期</label>
+        <div class="weekdays" id="weekDays"></div>
+      </div>
+      <div class="form-row"><label data-i18n="schTime">执行时间</label><input type="time" id="schTime" value="09:00"></div>
+      <div class="form-row"><label data-i18n="schPeriod">报告周期</label>
+        <div class="radios">
+          <label class="radio"><input type="radio" name="speriod" value="daily" checked=""> <span data-i18n="periodDaily">本日热榜</span></label>
+          <label class="radio"><input type="radio" name="speriod" value="weekly"> <span data-i18n="periodWeekly">本周热榜</span></label>
+          <label class="radio"><input type="radio" name="speriod" value="monthly"> <span data-i18n="periodMonthly">本月热榜</span></label>
+        </div>
+      </div>
+      <label class="check"><input type="checkbox" id="schBoot"> <span data-i18n="schBoot">开机自动启动本程序</span></label>
+      <div class="actions">
+        <button class="btn ghost" onclick="closeModal('ovSchedule')" data-i18n="btnCancel">取消</button>
+        <button class="btn ok" onclick="saveSchedule()">✓ <span data-i18n="schSave">保存定时设置</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 二次开发模态框 ===== -->
+<div class="overlay" id="ovDev">
+  <div class="modal glass">
+    <button class="close" onclick="closeModal('ovDev')">✕</button>
+    <div class="modal-head">🔧 <span data-i18n="devTitle">二次开发指南</span></div>
+    <div class="modal-body">
+      <div class="about-card"><h4>📄 源码结构</h4>
+        <p><code>server.js</code>：HTTP 服务 / JSON API / 报告历史 / 批量导出 / 定时任务 / CLI 模式（约 600 行，中文注释）<br>
+           <code>engine.js</code>：抓榜与解析 / 元数据与 README / 英译中 / 七问分析 / 报告生成（与桌面版 app.py 同一套逻辑）</p></div>
+      <div class="about-card"><h4>🗂 不改代码即可扩展</h4>
+        <p><code>data/kb_projects.json</code> 项目知识库 ｜ <code>data/dict_terms.json</code> 中英词典 ｜ <code>data/categories.json</code> 分类模板（关键词 + 七问文案） ｜ <code>data/mirrors.json</code> 镜像源清单（可增删加速站 / Firecrawl 配置）。改完刷新页面立即生效。</p></div>
+      <div class="about-card"><h4>⌨️ 命令行模式</h4>
+        <p>可接入 Windows 任务计划做定时报告（Web 版「⏰ 定时报告」已自动登记）：<br>
+           <code>node server.js --cli --since monthly</code><br>
+           <code>node server.js --cli --since 2026-08-01 --source official</code><br>
+           <code>node server.js --cli --html-file data/trending_cache_daily.html</code></p></div>
+      <div class="about-card"><h4>🌐 界面中英切换</h4>
+        <p>界面文字集中在 <code>UI_STR</code> 双语表中，可增补更多语言；协议判定表 <code>LICENSE_INFO</code> 可增删协议规则；报告正文保持中文。</p></div>
+      <div class="actions"><button class="btn ok" onclick="closeModal('ovDev')">✓ OK</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 报告目录模态框 ===== -->
+<div class="overlay" id="ovReports">
+  <div class="modal glass" style="width:min(760px,96vw)">
+    <button class="close" onclick="closeModal('ovReports')">✕</button>
+    <div class="modal-head">📂 <span data-i18n="dirTitle">报告目录 reports/</span></div>
+    <div class="modal-body">
+      <div class="actions" style="justify-content:flex-start;margin-bottom:10px">
+        <button class="btn ghost" onclick="openFolder('reports')">📁 <span data-i18n="dirOpenFolder">在资源管理器中打开</span></button>
+      </div>
+      <div id="dirList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ===== 部署窗口最小化后的悬浮卡（右下角） ===== -->
+<div class="mini-stack" id="miniStack">
+  <div class="mini-card" id="miniDeploy" style="display:none">
+    <div class="mini-title">🚀 一键部署<span class="grow"></span><span class="tag">MINIMIZED</span></div>
+    <div class="mini-status" id="miniDeployStatus">准备中…</div>
+    <div class="mini-bar"><i id="miniDeployBar"></i></div>
+    <div class="mini-acts"><button class="mini-btn gh" onclick="miniSet('deploy', false)">↗ 还原窗口</button></div>
+  </div>
+  <div class="mini-card" id="miniAi" style="display:none">
+    <div class="mini-title">🤖 AI 部署<span class="grow"></span><span class="tag">MINIMIZED</span></div>
+    <div class="mini-status" id="miniAiStatus">准备中…</div>
+    <div class="mini-bar"><i id="miniAiBar"></i></div>
+    <div class="mini-acts"><button class="mini-btn gh" onclick="miniSet('ai', false)">↗ 还原窗口</button></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   GitHub 热门项目分析报告生成器 · Web 版（本地 Node 服务）
+   前端只负责渲染，抓取/分析/落盘全部由 server.js + engine.js 完成
+============================================================ */
+
+/* ---------- 国际化字典 ---------- */
+const UI_STR = {
+  zh:{
+    appName:'GitHub 热门项目分析报告生成器',appSub:'WEB EDITION · 零 API · 完全开放二次开发',badgeZero:'ZERO API',
+    stEngine:'引擎',stProxy:'代理',btnAcc:'GitHub 加速器',opsTitle:'控制台',
+    periodDaily:'本日热榜',periodWeekly:'本周热榜',periodMonthly:'本月热榜',periodCustom:'自定义日期',datePick:'选择日期',
+    btnGen:'生成分析报告',btnCancelGen:'取消',btnExport:'批量导出',btnFav:'收藏对比',btnHistory:'报告历史',btnTool:'下载工具',
+    btnSchedule:'定时报告',btnConn:'连通性检测',btnSettings:'设置',btnDir:'报告目录',btnDev:'二次开发',
+    btnAiDeploy:'AI 部署',toolsMore:'更多工具',toolsHint:'部署 / 导出 / 历史 / 定时 / 连通性 / 二次开发',
+    // 一键部署（Coolify）
+    btnDeploy:'一键部署',dpTitle:'一键部署',dpChecking:'正在检测 Coolify 服务…',
+    dpOnline:'Coolify 在线 · Token 已配置',dpNoToken:'Coolify 在线，但还没有配置 API Token',dpOffline:'Coolify 未启动',
+    dpBase:'Coolify 面板地址',dpTokenHint:'Token 仅保存在本机 config.json，不会下发给浏览器端脚本。',dpSaveToken:'保存并检测',
+    dpRepo:'要部署的项目',dpTarget:'部署目标地址',dpAdvanced:'高级选项',dpBranch:'分支',dpPack:'构建方式',
+    dpPackAuto:'自动识别（Nixpacks）',dpCport:'容器端口（应用在容器内监听的端口）',dpGuide:'部署指南',dpCancel:'取消',dpStart:'开始部署',
+    stPeriod:'当前周期',stLang:'界面语言',stLatest:'最近报告',tabFav:'收藏对比',tabHistory:'报告历史',
+    emptyReport:'还没有报告哦～',emptyReport2:'点击「🚀 生成分析报告」抓取 GitHub Trending 热榜并输出七问中文深度分析；',
+    emptyReport3:'报告会自动保存到 reports/ 文件夹（Markdown + HTML 双格式），并可在「🕘 报告历史」中随时打开。',
+    favTitle:'收藏仓库',favPh:'owner/repo · 如 alibaba/open-code-review',favTip1:'💡 提示',noFav:'暂无收藏，输入 owner/repo 添加',
+    favTip2:'：选中任意两个收藏项后，下方会自动并排对比展示它们在最近报告中的完整分析。',
+    cmpTitle:'对比视图',cmpEmpty:'选择两个收藏项目开始对比',hisTitle:'最近报告列表',clearLog:'清空日志',
+    foot1:'本工具零 API、零 Key 也能完整出报告 · 数据抓取走多镜像容灾',
+    foot2:'完全开放二次开发 · 内置分析引擎 + 免费翻译通道 · 配置仅存本机',
+    settingsTitle:'设置',setApiTab:'大模型 API',setNetTab:'网络',setAboutTab:'关于 / 二次开发',
+    setApiUrl:'API 地址',setApiUrlHint:'DeepSeek / OpenAI / 通义 / 智谱 / Kimi 等兼容接口地址',
+    setApiModel:'模型名称',setApiModelHint:'对应平台的模型名，如 gpt-4o-mini、glm-4.6',
+    setApiKey:'API Key（仅保存在本机 config.json）',setApiKeyHint:'不填 Key 完全可用（内置规则引擎出报告）；填了升级为 AI 逐项目深度分析',
+    setEngine:'分析引擎',setEngineAuto:'自动（有 Key 用 AI，无 Key 用内置）',setEngineAi:'仅 AI（需填 Key）',setEngineBuiltin:'仅内置规则引擎',
+    setProxy:'代理地址（HTTP）',setProxyHint:'开了 Clash / 加速器后填这里；留空自动使用系统代理',
+    setTopN:'每期报告项目数 Top N',setTopNHint:'默认 10，范围 5 ~ 30',
+    setSource:'榜单数据来源',setSourceAuto:'自动（多源并发，官方优先）',setSourceOfficial:'GitHub 官方（最权威）',setSourceChina:'国内镜像站（免代理）',
+    btnTestApi:'测试大模型接口',
+    aboutName:'GitHub 热门项目分析报告生成器',
+    aboutDesc:'零 API、零 Key 完整出报告；多数据源并发探测 + 离线缓存兜底；七问中文深度分析 + 开源协议判定；Markdown + HTML 双格式导出。',
+    aboutGh:'GitHub 原地址',aboutGitee:'Gitee 备用地址',aboutMirror:'加速镜像',aboutUserHint:'发布后请将 <你的用户名> 替换为实际账号名',
+    aboutAccTitle:'GitHub 加速器推荐',aboutAccDesc:'推荐使用 steamcommunity_302（GitHub 加速器），下载安装后即可正常访问 GitHub；也可直接点主界面「🚀 GitHub 加速器」按钮打开下载地址。',
+    aboutDevTitle:'完全开放二次开发',aboutDevDesc:'源码 server.js（HTTP/API/定时任务/CLI）+ engine.js（抓榜/解析/分析/报告）；data/*.json（知识库 / 词典 / 分类模板 / 镜像源）不改代码即可扩展。',
+    btnCancel:'取消',btnSave:'保存设置',
+    schTitle:'定时报告',schEnable:'启用定时自动生成报告',schFreq:'执行频率',schDaily:'每天',schWeekly:'每周',
+    schDays:'选择星期',schTime:'执行时间',schPeriod:'报告周期',schBoot:'开机自动启动本程序',schSave:'保存定时设置',
+    devTitle:'二次开发指南',dirTitle:'报告目录 reports/',dirOpenFolder:'在资源管理器中打开',
+    trendTitle:'本期技术趋势',pickTitle:'编辑精选推荐',overviewTitle:'本期热门项目总览',
+    colRank:'排名',colRepo:'项目',colLang:'语言',colNew:'本期新增 ⭐',colTrend:'增长状态',
+    secTotal:'统计周期',secDate:'生成日期',secSource:'数据来源',secCost:'耗时',
+    qA:'A. 项目背景',qB:'B. 项目目的',qC:'C. 主要作用',qD:'D. 使用技术',qE:'E. 适用场景',qF:'F. 热门原因',qG:'G. 开源协议',
+    copyOK:'已复制完整地址',noReport:'还没有报告，请先生成一份',exportDone:'批量导出完成（CSV + TXT 已写入 reports/）',
+    exportFail:'导出失败',favAddOK:'已加入收藏',favDup:'已在收藏中',favNeed2:'请先收藏至少两个项目',
+    favSelTip:'请分别选中两个不同项目',hisEmpty:'暂无报告记录',hisDelOK:'已删除报告',hisOpenTT:'已在新标签页打开报告',
+    connStart:'正在并行探测全部数据源…',connNone:'全部数据源不可用：可开启代理/加速器后重试',connDone:'连通性检测完成',
+    setSaved:'设置已保存',stNoProxy:'未设置',stAuto:'auto（内置规则引擎）',genRunning:'正在生成中，请等待当前任务完成',
+    copy:'复制',home:'项目主页',orig:'GitHub 原地址',gitee:'Gitee 镜像',acc:'加速镜像',store:'github.store',
+    trendBoom:'爆发',trendFlat:'平稳增长',trendSlow:'增长放缓',
+    openHtml:'打开 HTML',openMd:'打开 Markdown',del:'删除',schDone:'定时任务已登记（Windows 计划任务）',
+    schOff:'定时任务已关闭',schFail:'定时任务登记失败：',genDone:'报告已生成完成',
+    welcome:'欢迎使用 GitHub 热门项目分析报告生成器 v2.31.0（Web 版 · 本地 Node 服务）',
+    tipAcc:'🌐 GitHub 打不开？推荐 GitHub 加速器 steamcommunity_302（点右上角「🚀 GitHub 加速器」）',
+    tipCache:'网络不通时程序会自动启用离线缓存继续出报告（报告会标注数据来源）',
+    reportNoItem:'最近报告中没有该项目的分析，请先生成一份包含它的报告'
+  },
+  en:{
+    appName:'GitHub Trending Analyzer',appSub:'WEB EDITION · ZERO API · FULLY HACKABLE',badgeZero:'ZERO API',
+    stEngine:'Engine',stProxy:'Proxy',btnAcc:'GitHub Accelerator',opsTitle:'Console',
+    periodDaily:'Today',periodWeekly:'This Week',periodMonthly:'This Month',periodCustom:'Custom Date',datePick:'Pick date',
+    btnGen:'Generate Report',btnCancelGen:'Cancel',btnExport:'Export',btnFav:'Favorites',btnHistory:'History',btnTool:'Download Tool',
+    btnSchedule:'Scheduler',btnConn:'Connectivity',btnSettings:'Settings',btnDir:'Reports',btnDev:'Dev Guide',
+    btnAiDeploy:'AI Deploy',toolsMore:'More tools',toolsHint:'deploy / export / history / schedule / connectivity / dev',
+    // one-click deploy (Coolify)
+    btnDeploy:'Deploy',dpTitle:'One-click Deploy',dpChecking:'Checking Coolify service…',
+    dpOnline:'Coolify online · token configured',dpNoToken:'Coolify online, API token missing',dpOffline:'Coolify is not running',
+    dpBase:'Coolify panel URL',dpTokenHint:'The token is stored only in local config.json and never sent to browser scripts.',dpSaveToken:'Save & check',
+    dpRepo:'Repository to deploy',dpTarget:'Deploy target address',dpAdvanced:'Advanced options',dpBranch:'Branch',dpPack:'Build pack',
+    dpPackAuto:'Auto-detect (Nixpacks)',dpCport:'Container port (port the app listens on inside the container)',dpGuide:'Deploy guide',dpCancel:'Cancel',dpStart:'Start deploy',
+    stPeriod:'Period',stLang:'Language',stLatest:'Latest report',tabFav:'Favorites',tabHistory:'History',
+    emptyReport:'No report yet.',emptyReport2:'Click “Generate Report” to scrape GitHub Trending and build a 7-question Chinese analysis.',
+    emptyReport3:'Reports are saved to reports/ as Markdown + HTML and can be reopened from “History”.',
+    favTitle:'Starred repos',favPh:'owner/repo · e.g. alibaba/open-code-review',favTip1:'Tips',noFav:'No starred repos yet — add owner/repo above',
+    favTip2:' — pick two starred repos to compare their full analysis side by side.',
+    cmpTitle:'Compare',cmpEmpty:'Select two starred repos to compare',hisTitle:'Recent reports',clearLog:'Clear log',
+    foot1:'Zero API / zero key still produces a full report · multi-mirror fallback',foot2:'Fully open for hacking · built-in engine + free translation · config stays local',
+    settingsTitle:'Settings',setApiTab:'LLM API',setNetTab:'Network',setAboutTab:'About / Dev',
+    setApiUrl:'API Base',setApiUrlHint:'Any OpenAI-compatible endpoint (DeepSeek / OpenAI / Qwen / Zhipu / Kimi)',
+    setApiModel:'Model',setApiModelHint:'Model name of that platform, e.g. gpt-4o-mini, glm-4.6',
+    setApiKey:'API Key (stored only in local config.json)',setApiKeyHint:'Optional — without a key the built-in rule engine produces the report',
+    setEngine:'Engine',setEngineAuto:'Auto (AI if key, else built-in)',setEngineAi:'AI only (key required)',setEngineBuiltin:'Built-in only',
+    setProxy:'Proxy URL (HTTP)',setProxyHint:'e.g. http://127.0.0.1:7890 · empty = system proxy',
+    setTopN:'Projects per report (Top N)',setTopNHint:'Default 10, range 5 ~ 30',
+    setSource:'Trending source',setSourceAuto:'Auto (multi-source, official first)',setSourceOfficial:'GitHub official (authoritative)',setSourceChina:'CN mirrors (no proxy)',
+    btnTestApi:'Test LLM API',
+    aboutName:'GitHub Trending Analyzer',
+    aboutDesc:'Full report with zero API and zero key; multi-source parallel probing + offline cache fallback; 7-question Chinese analysis + license verdict; Markdown + HTML output.',
+    aboutGh:'GitHub',aboutGitee:'Gitee mirror',aboutMirror:'Accelerated mirror',aboutUserHint:'Replace <your-username> before publishing',
+    aboutAccTitle:'GitHub accelerator',aboutAccDesc:'steamcommunity_302 is recommended if GitHub is unreachable from your network.',
+    aboutDevTitle:'Fully open for hacking',aboutDevDesc:'server.js (HTTP/API/scheduler/CLI) + engine.js (scraping/parsing/analysis/report); extend data/*.json without touching code.',
+    btnCancel:'Cancel',btnSave:'Save',
+    schTitle:'Scheduled reports',schEnable:'Enable scheduled reports',schFreq:'Frequency',schDaily:'Every day',schWeekly:'Every week',
+    schDays:'Weekday',schTime:'Time',schPeriod:'Period',schBoot:'Launch at login',schSave:'Save schedule',
+    devTitle:'Dev Guide',dirTitle:'Reports folder',dirOpenFolder:'Open in Explorer',
+    trendTitle:'Tech trends',pickTitle:'Editor picks',overviewTitle:'Overview',
+    colRank:'Rank',colRepo:'Repository',colLang:'Language',colNew:'New ⭐',colTrend:'Trend',
+    secTotal:'Period',secDate:'Generated',secSource:'Source',secCost:'Cost',
+    qA:'A. Background',qB:'B. Purpose',qC:'C. Key Role',qD:'D. Tech Stack',qE:'E. Use Cases',qF:'F. Why Hot',qG:'G. License',
+    copyOK:'Full URL copied',noReport:'No report yet — generate one first',exportDone:'Export done (CSV + TXT written to reports/)',
+    exportFail:'Export failed',favAddOK:'Starred',favDup:'Already starred',favNeed2:'Star at least two repos first',
+    favSelTip:'Select two different items',hisEmpty:'No reports yet',hisDelOK:'Report deleted',hisOpenTT:'Report opened in a new tab',
+    connStart:'Probing all data sources in parallel…',connNone:'All sources unreachable — enable a proxy/accelerator and retry',connDone:'Connectivity check finished',
+    setSaved:'Settings saved',stNoProxy:'not set',stAuto:'auto (built-in engine)',genRunning:'A job is running, please wait',
+    copy:'Copy',home:'Homepage',orig:'GitHub',gitee:'Gitee',acc:'Mirror',store:'github.store',
+    trendBoom:'Exploding',trendFlat:'Steady',trendSlow:'Slowing',
+    openHtml:'Open HTML',openMd:'Open Markdown',del:'Delete',schDone:'Scheduled task registered (Windows Task Scheduler)',
+    schOff:'Scheduled task disabled',schFail:'Failed to register scheduled task: ',genDone:'Report generated',
+    welcome:'Welcome to GitHub Trending Analyzer v2.31.0 (Web · local Node service)',
+    tipAcc:'🌐 GitHub unreachable? Try the steamcommunity_302 accelerator (top-right button)',
+    tipCache:'If the network fails, the app falls back to the offline cache automatically',
+    reportNoItem:'This repo is not in the latest report — generate a report containing it first'
+  }
+};
+
+const LANG_COLORS = {
+  Markdown:'#519aba',Rust:'#dea584',Python:'#3572A5','C++':'#f34b7d',TypeScript:'#3178c6',Go:'#00ADD8',
+  JavaScript:'#f1e05a',C:'#555555',Java:'#b07219',Ruby:'#701516',PHP:'#4F5D95',Swift:'#F05138',Kotlin:'#A97BFF',
+  Shell:'#89e051',Vue:'#41b883',React:'#61dafb',Dart:'#00B4AB',Zig:'#ec915c',Lua:'#000080',Elixir:'#6e4a7e',
+  Scala:'#c22d40',Perl:'#0298c3','C#':'#178600','Jupyter Notebook':'#DA5B0B',HTML:'#e34c26',CSS:'#563d7c',
+  Dockerfile:'#384d54',CMake:'#DA3434','Objective-C':'#438eff','Assembly':'#6E4C13',Haskell:'#5e5086'
+};
+
+let LANG = localStorage.getItem('ghLang') || 'zh';
+let appState = { config:{}, reports:[], favorites:[], schedule:null, dir:'' };
+let period = 'daily';
+let customDate = '';
+let isGenning = false;
+let jobCursor = 0;
+let pollTimer = null;
+let selFavs = [];
+let schWeek = [true,true,true,true,true,false,false];
+
+/* ---------- 基础工具 ---------- */
+function t(k){ return (UI_STR[LANG]||UI_STR.zh)[k] || UI_STR.zh[k] || k; }
+function escapeHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function log(type,msg){
+  const b = document.getElementById('termBody');
+  const now = new Date().toTimeString().slice(0,8);
+  const line = document.createElement('div');
+  line.className = 'log-line ' + type;
+  line.innerHTML = '<span class="t">[' + now + ']</span> ' + escapeHtml(msg);
+  b.appendChild(line);
+  while(b.children.length > 1200) b.removeChild(b.firstChild);
+  b.scrollTop = b.scrollHeight;
+  const dock = document.getElementById('logDock');
+  if (dock && dock.hidden) {
+    const fab = document.getElementById('logFab');
+    if (fab) fab.classList.add('new');
+  }
+}
+function clearLog(){document.getElementById('termBody').innerHTML='';log('sys','🧹 ' + t('clearLog'));}
+function toggleTerm(){document.getElementById('termBody').classList.toggle('collapsed');}
+
+/* ---------- 更多工具：点击展开 / 收起 ---------- */
+function toggleToolsFold(force){
+  const box = document.getElementById('toolsFold');
+  if(!box) return;
+  const open = (typeof force === 'boolean') ? force : !box.classList.contains('open');
+  box.classList.toggle('open', open);
+  const head = box.querySelector('.fold-head');
+  if(head) head.setAttribute('aria-expanded', open ? 'true' : 'false');
+  try{ localStorage.setItem('toolsFold', open ? '1' : '0'); }catch(e){}
+}
+
+/* ---------- 壁纸视频台：html/壁纸 里有什么就播什么 ---------- */
+let WALLS = [], WALL_I = 0, WALL_PIN = null; // WALL_PIN=被选定（循环播放）的视频名；null=未选定
+function toggleLogDock(force){
+  const d = document.getElementById('logDock');
+  const fab = document.getElementById('logFab');
+  if (!d) return;
+  const open = (typeof force === 'boolean') ? force : d.hidden;
+  d.hidden = !open;
+  if (open && fab) fab.classList.remove('new');
+}
+async function initWallpaper(){
+  const v = document.getElementById('wallVideo');
+  const empty = document.getElementById('wallEmpty');
+  if (!v) return;
+  startWallWatch();
+  let files = [];
+  try { const r = await api('/api/wallpapers'); files = (r && r.files) || []; } catch(e){ files = []; }
+  WALLS = files;
+  if (!files.length){
+    v.style.display = 'none';
+    if (empty) empty.style.display = 'grid';
+    return;
+  }
+  v.style.display = 'block';
+  if (empty) empty.style.display = 'none';
+
+  v.addEventListener('ended', () => {
+    if (WALL_PIN) { v.currentTime = 0; v.play().catch(()=>{}); } // 选定：循环播放当前视频，不切换
+    else wallStep(1);
+  });
+  v.addEventListener('click', () => { v.paused ? v.play().catch(()=>{}) : v.pause(); });
+  v.addEventListener('play', () => { document.getElementById('wallPlay').textContent = '⏸'; });
+  v.addEventListener('pause', () => { document.getElementById('wallPlay').textContent = '▶'; });
+  document.getElementById('wallPrev').onclick = () => wallStep(-1);
+  document.getElementById('wallNext').onclick = () => wallStep(1);
+  document.getElementById('wallPlay').onclick = () => { v.paused ? v.play().catch(()=>{}) : v.pause(); };
+  document.getElementById('wallSound').onclick = (e) => {
+    v.muted = !v.muted;
+    e.currentTarget.textContent = v.muted ? '🔇' : '🔊';
+    if (!v.muted) v.play().catch(()=>{});
+  };
+  document.getElementById('wallFull').onclick = () => {
+    const f = document.getElementById('wallFrame');
+    if (document.fullscreenElement) document.exitFullscreen();
+    else if (f && f.requestFullscreen) f.requestFullscreen().catch(()=>{});
+  };
+  const wallPinBtn = document.getElementById('wallPin');
+  if (wallPinBtn) wallPinBtn.onclick = () => setWallPin(!WALL_PIN);
+  playWall(0);
+}
+function setWallPin(on){
+  if (on) WALL_PIN = (WALLS[WALL_I] && WALLS[WALL_I].name) || WALL_PIN || '__cur__';
+  else WALL_PIN = null;
+  const btn = document.getElementById('wallPin');
+  if (btn){
+    btn.classList.toggle('on', !!WALL_PIN);
+    btn.textContent = WALL_PIN ? '🔒 已选定' : '📌 选定';
+    btn.title = WALL_PIN ? '取消选定，恢复自动轮播' : '选定此视频并循环播放，不再切换';
+  }
+  const p = document.getElementById('wallPrev'), n = document.getElementById('wallNext');
+  if (p) p.disabled = !!WALL_PIN;
+  if (n) n.disabled = !!WALL_PIN;
+}
+function playWall(i){
+  const v = document.getElementById('wallVideo');
+  if (!WALLS.length || !v) return;
+  if (WALL_PIN){
+    const pi = WALLS.findIndex(w => w.name === WALL_PIN);
+    if (pi < 0) setWallPin(false);   // 被选定视频已不存在，取消选定
+    else i = pi;                     // 选定时只播放被选定的视频
+  }
+  WALL_I = (i + WALLS.length) % WALLS.length;
+  const w = WALLS[WALL_I];
+  v.src = w.url;
+  document.getElementById('wallName').textContent = w.name;
+  v.play().catch(()=>{});
+}
+function wallStep(d){ if (WALL_PIN) return; if (WALLS.length) playWall(WALL_I + d); }
+
+/* ---------- 壁纸目录热更新：新放进去的视频自动发现，不用刷新页面 ---------- */
+let WALL_WATCH = null;
+function wallNames(list){ return (list || []).map(w => w.name).join('|'); }
+
+async function refreshWallpapers(){
+  const v = document.getElementById('wallVideo');
+  if (!v) return;
+  let files = null;
+  try { const r = await api('/api/wallpapers'); files = (r && r.files) || []; } catch(e){ return; }
+  if (wallNames(WALLS) === wallNames(files)) return;
+
+  const prev = WALLS.map(w => w.name);
+  const next = files.map(f => f.name);
+  const cur = (WALLS[WALL_I] && WALLS[WALL_I].name) || '';
+  const added = next.filter(n => !prev.includes(n));
+  WALLS = files;
+
+  const empty = document.getElementById('wallEmpty');
+  if (!files.length){
+    v.pause(); v.removeAttribute('src'); v.load();
+    v.style.display = 'none';
+    if (empty) empty.style.display = 'grid';
+    const nm = document.getElementById('wallName'); if (nm) nm.textContent = '—';
+    setWallPin(false);
+    log('sys', '🎞 壁纸目录已清空');
+    return;
+  }
+  v.style.display = 'block';
+  if (empty) empty.style.display = 'none';
+
+  // 选定时：锁住被选定视频，不自动切换到新视频；被选定视频若被移除则自动取消选定
+  if (WALL_PIN){
+    const pinIdx = next.indexOf(WALL_PIN);
+    if (pinIdx >= 0){
+      WALL_I = pinIdx;
+      const curName = decodeURIComponent((v.src || '').split('/').pop() || '');
+      if (curName !== WALL_PIN) playWall(pinIdx);
+    } else {
+      setWallPin(false);
+    }
+    if (WALL_PIN) return; // 保持锁定，不进入下面的自动切换
+  }
+
+  if (added.length){
+    const idx = next.indexOf(added[0]);
+    playWall(idx >= 0 ? idx : 0);
+    log('ok', '🎞 发现新视频，已切换：' + added[0]);
+  } else if (cur && next.includes(cur)){
+    WALL_I = next.indexOf(cur);
+  } else {
+    playWall(0);
+  }
+}
+
+function startWallWatch(){
+  if (WALL_WATCH) return;
+  WALL_WATCH = setInterval(() => { if (!document.hidden) refreshWallpapers(); }, 4000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshWallpapers(); });
+  window.addEventListener('focus', refreshWallpapers);
+}
+function toast(msg,type){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (type?' '+type:'');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=>el.classList.remove('show'), 3000);
+}
+async function api(path, opt){
+  const r = await fetch(path, Object.assign({headers:{'Content-Type':'application/json'}, cache:'no-store'}, opt||{}));
+  try { return await r.json(); } catch(e){ return {ok:false, error:'HTTP ' + r.status}; }
+}
+
+/* ---------- 国际化 ---------- */
+function applyLang(){
+  document.documentElement.lang = LANG==='zh'?'zh-CN':'en';
+  document.getElementById('langLabel').textContent = LANG==='zh'?'EN':'中文';
+  const _osLang = document.getElementById('osLang'); if (_osLang) _osLang.textContent = LANG==='zh'?'中文':'English';
+  document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent = t(el.dataset.i18n);});
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{el.placeholder = t(el.dataset.i18nPh);});
+  renderAll();
+}
+function toggleLang(){LANG = LANG==='zh'?'en':'zh';localStorage.setItem('ghLang',LANG);applyLang();log('ok', LANG==='zh'?'🌐 已切换为中文界面':'🌐 Switched to English UI');}
+
+/* ---------- 周期 ---------- */
+function setPeriod(p, quiet){
+  period = p;
+  document.querySelectorAll('#periodSeg button').forEach(b=>b.classList.toggle('on',b.dataset.p===p));
+  document.getElementById('datepick').classList.toggle('show',p==='custom');
+  const names={daily:'periodDaily',weekly:'periodWeekly',monthly:'periodMonthly',custom:'periodCustom'};
+  const _osPeriod = document.getElementById('osPeriod'); if (_osPeriod) _osPeriod.textContent = t(names[p]);
+  if(p==='custom'&&!customDate){document.getElementById('customDate').value=new Date().toISOString().slice(0,10);}
+  if(!quiet){ log('info','📆 ' + t(names[p])); api('/api/config',{method:'POST',body:JSON.stringify({since:p})}).catch(()=>{}); }
+}
+document.getElementById('customDate').addEventListener('change',e=>{customDate=e.target.value;});
+
+/* ---------- 进度 ---------- */
+function setProgress(p){
+  document.getElementById('progress').classList.add('show');
+  document.getElementById('bar').style.width = p + '%';
+  document.getElementById('pct').textContent = Math.round(p) + '%';
+}
+function hideProgress(){setTimeout(()=>{document.getElementById('progress').classList.remove('show');document.getElementById('bar').style.width='0';document.getElementById('pct').textContent='0%';},700);}
+
+/* ---------- 生成报告 ---------- */
+async function generateReport(){
+  if(isGenning){ toast(t('genRunning'),'warn'); return; }
+  const since = period==='custom' ? (customDate || new Date().toISOString().slice(0,10)) : period;
+  isGenning = true; jobCursor = 0;
+  const btn = document.getElementById('btnGen'); btn.disabled = true;
+  const cbtn = document.getElementById('btnCancelGen');
+  cbtn.style.display = '';
+  cbtn.disabled = false;
+  cbtn.dataset.cancelling = '0';
+  cbtn.innerHTML = '⛔ <span data-i18n="btnCancelGen">' + t('btnCancelGen') + '</span>';
+  document.getElementById('termBody').innerHTML = '';
+  setProgress(1);
+  log('sys','════ 🚀 ' + t('btnGen') + ' ════');
+  const r = await api('/api/generate',{method:'POST',body:JSON.stringify({since, sourceMode: appState.config.source_mode || 'auto'})});
+  if(!r.ok){ log('err','❌ ' + (r.error||'启动失败')); toast(r.error||'启动失败','err'); endGen(); return; }
+  pollJob();
+}
+
+function pollJob(){
+  clearTimeout(pollTimer);
+  pollTimer = setTimeout(async ()=>{
+    const j = await api('/api/job?from=' + jobCursor);
+    if(!Array.isArray(j.logs)){
+      log('err','❌ 无法获取本地任务状态（服务可能已关闭）');
+      endGen();
+      return;
+    }
+    if(j.logs.length){
+      for(const line of j.logs){
+        const type = /^✔|完成/.test(line) ? 'ok' : /^✘|❌|失败|不可用/.test(line) ? 'err' : /^⚠/.test(line) ? 'warn' : 'info';
+        log(type, line);
+      }
+      jobCursor = j.next;
+    }
+    if(typeof j.percent === 'number') setProgress(j.percent);
+    if(j.done){
+      if(j.error && j.error !== '用户取消'){
+        toast('生成失败：' + j.error,'err');
+      } else if(j.report){
+        log('ok','✔ ' + t('genDone') + '（可在「📂 报告目录 / 🕘 报告历史」中打开）');
+        toast(t('genDone'));
+      } else if(j.error === '用户取消'){
+        log('warn','⛔ 已取消本次生成');
+        toast('已取消','warn');
+      }
+      await refreshHistory();
+      if(j.report && !j.error){
+        const latest = (appState.reports||[])[0];
+        if(latest && latest.html) api('/api/open-report',{method:'POST',body:JSON.stringify({file:latest.html})});
+      }
+      endGen();
+      return;
+    }
+    pollJob();
+  }, 400);
+}
+
+async function cancelGenerate(){
+  const cbtn = document.getElementById('btnCancelGen');
+  if(!isGenning || cbtn.dataset.cancelling === '1') return;
+  cbtn.dataset.cancelling = '1';
+  cbtn.disabled = true;
+  cbtn.innerHTML = '⏳ <span>取消中…</span>';
+  log('warn','⛔ 已发出取消请求，正在停止当前步骤…');
+  toast('正在取消…','warn');
+  try { await api('/api/cancel',{method:'POST'}); } catch(e) { /* ignore */ }
+}
+
+function endGen(){
+  isGenning = false;
+  document.getElementById('btnGen').disabled = false;
+  const cbtn = document.getElementById('btnCancelGen');
+  cbtn.style.display = 'none';
+  cbtn.disabled = false;
+  cbtn.dataset.cancelling = '0';
+  cbtn.innerHTML = '⛔ <span data-i18n="btnCancelGen">' + t('btnCancelGen') + '</span>';
+  hideProgress();
+}
+
+
+/* ---------- 批量导出 ---------- */
+async function doExport(){
+  if(!(appState.reports||[]).length){ toast(t('noReport'),'warn'); return; }
+  const r = await api('/api/export',{method:'POST'});
+  if(!r.ok){ toast(t('exportFail') + (r.error?('：'+r.error):''),'err'); log('err','❌ ' + t('exportFail') + (r.error||'')); return; }
+  downloadUrl(r.csvUrl);
+  setTimeout(()=>downloadUrl(r.txtUrl), 400);
+  log('ok','📤 ' + t('exportDone') + `（${r.csv} / ${r.txt}，共 ${r.count} 个项目）`);
+  toast(t('exportDone') + ` · ${r.count}`);
+}
+function downloadUrl(url){
+  const a = document.createElement('a');
+  a.href = url; a.download = '';
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>a.remove(), 500);
+}
+function copyUrl(url){
+  (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject())
+    .then(()=>toast(t('copyOK')))
+    .catch(()=>{const ta=document.createElement('textarea');ta.value=url;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast(t('copyOK'));});
+}
+
+/* ---------- 收藏对比 ---------- */
+async function addFav(){
+  const inp = document.getElementById('favInput');
+  const v = inp.value.trim().replace(/^https?:\/\/(github\.com|gitee\.com|kkgithub\.com)\//i,'');
+  if(!v || !v.includes('/')){ toast('格式：owner/repo','warn'); return; }
+  const r = await api('/api/favorites',{method:'POST',body:JSON.stringify({action:'add',repo:v})});
+  if(!r.ok) return;
+  const existed = (appState.favorites||[]).includes(v);
+  appState.favorites = r.favorites || [];
+  inp.value=''; renderFavs(); renderCompare();
+  toast(t(existed?'favDup':'favAddOK') + '：' + v);
+  if(!existed) log('ok','⭐ ' + t('favAddOK') + '：' + v);
+}
+function renderFavs(){
+  const list = document.getElementById('favList');
+  const favs = appState.favorites || [];
+  const fc = document.getElementById('favCnt');
+  if(fc) fc.textContent = favs.length;
+  if(!favs.length){ list.innerHTML = `<div class="cmp-tip">${t('noFav')||'暂无收藏'}</div>`; return; }
+  list.innerHTML = favs.map(f=>`
+    <div class="fav-item ${selFavs.includes(f)?'sel':''}" onclick="toggleSel('${escapeHtml(f)}')">
+      <span>📦</span><span class="nm">${escapeHtml(f)}</span>
+      <button class="del" onclick="event.stopPropagation();delFav('${escapeHtml(f)}')">🗑</button>
+    </div>`).join('');
+}
+function toggleSel(f){
+  selFavs.includes(f) ? selFavs = selFavs.filter(x=>x!==f) : selFavs.push(f);
+  if(selFavs.length>2) selFavs = selFavs.slice(-2);
+  renderFavs(); renderCompare();
+}
+async function delFav(f){
+  const r = await api('/api/favorites',{method:'POST',body:JSON.stringify({action:'remove',repo:f})});
+  if(r.ok) appState.favorites = r.favorites;
+  selFavs = selFavs.filter(x=>x!==f);
+  renderFavs(); renderCompare();
+}
+async function renderCompare(){
+  const area = document.getElementById('compareArea');
+  if(selFavs.length<2){
+    area.innerHTML = `<div class="empty" style="padding:40px 16px"><div class="big" style="font-size:38px">⚖️</div><p>${t('favSelTip')}</p></div>`;
+    return;
+  }
+  const [a,b] = await Promise.all(selFavs.map(f=>api('/api/compare',{method:'POST',body:JSON.stringify({repo:f})})));
+  if(!a.ok || !b.ok){
+    area.innerHTML = `<div class="empty" style="padding:40px 16px"><p style="color:var(--yellow)">${escapeHtml((a.error||b.error||t('favNeed2')))}</p><p style="font-size:12px;color:var(--dim);margin-top:8px">${t('reportNoItem')}</p></div>`;
+    return;
+  }
+  const mkCard = r=>{
+    const a2 = r.analysis || {};
+    const color = LANG_COLORS[r.lang] || '#888';
+    const li = arr => Array.isArray(arr) && arr.length ? arr.map(x=>`<div>• ${escapeHtml(x)}</div>`).join('') : escapeHtml(arr || '暂无相关信息');
+    const qs = [['a',a2.A],['b',a2.B],['c',li(a2.C)],['d',li(a2.D)],['e',li(a2.E)],['f',a2.F],['g',a2.G]]
+      .map(([k,v])=>`<div class="q"><div class="qk ${k}">${t('q'+k.toUpperCase())}</div><div class="qv">${k==='c'||k==='d'||k==='e'?v:escapeHtml(v)}</div></div>`).join('');
+    return `<div class="repo-card glass cmp-vs" style="--g1:${color};--g2:${color}">
+      <div class="accent"></div>
+      <div class="rc-head">
+        <div class="rank-badge" style="font-size:14px">VS</div>
+        <div class="rc-title"><div class="full"><span>${escapeHtml(r.owner)}</span>/${escapeHtml(r.repo)}</div>
+        <div class="desc">${escapeHtml(a2.S || r.desc)}</div></div>
+        <div class="rc-meta">
+          <span class="mchip star">⭐ <b>${escapeHtml(r.total_stars)}</b></span>
+          <span class="mchip ${r.license.ok?'lic':'lic warn'}">📜 ${escapeHtml(r.license.name)}</span>
+        </div>
+      </div>
+      <div class="rc-body"><div class="q7">${qs}</div></div>
+      <div class="rc-links"><span class="addr">${escapeHtml(r.url)}</span>
+        <a class="mini-btn gh" href="${escapeHtml(r.url)}" target="_blank">🔗 ${t('orig')}</a>
+        ${r.homepage?`<a class="mini-btn home" href="${escapeHtml(r.homepage)}" target="_blank">🏠 ${t('home')}</a>`:''}</div>
+    </div>`;
+  };
+  area.innerHTML = `<div class="cmp-grid">${mkCard(a.item)}${mkCard(b.item)}</div>`;
+}
+
+/* ---------- 报告历史 ---------- */
+async function refreshHistory(){
+  const r = await api('/api/history');
+  if(r.ok) appState.reports = r.reports || [];
+  renderHistory();
+}
+function renderHistory(){
+  const list = document.getElementById('hisList');
+  const reps = appState.reports || [];
+  const hc = document.getElementById('hisCnt');
+  if(hc) hc.textContent = reps.length;
+  updateLatestChip();
+  if(!reps.length){ list.innerHTML = `<div class="empty" style="padding:40px 16px"><p>${t('hisEmpty')}</p></div>`; return; }
+  list.innerHTML = reps.map(h=>`
+    <div class="his-item">
+      <div class="doc">📄</div>
+      <div class="info"><div class="nm">${escapeHtml(h.name)}</div><div class="tm">${escapeHtml(h.time)}</div></div>
+      <div class="acts">
+        ${h.html?`<button class="mini-btn gh" onclick="openReport('${escapeHtml(h.html)}')">🌐 ${t('openHtml')}</button>`:''}
+        <button class="mini-btn" onclick="openReport('${escapeHtml(h.md)}')">📝 ${t('openMd')}</button>
+        <button class="mini-btn" onclick="delHistory('${escapeHtml(h.md)}')">🗑 ${t('del')}</button>
+      </div>
+    </div>`).join('');
+}
+function openReport(file){
+  const url = '/reports/' + encodeURIComponent(file);
+  const w = window.open(url, '_blank');
+  if (!w) {
+    // 弹窗被拦截：退化为当前页跳转，并提示
+    toast('浏览器拦截了新窗口，已在当前页打开（返回请按后退）', 'warn');
+    location.href = url;
+    return;
+  }
+  log('ok','📖 ' + t('hisOpenTT') + '：' + file);
+}
+async function delHistory(md){
+  if(!confirm('确定删除这份报告吗？（Markdown + HTML 一并删除）')) return;
+  const r = await api('/api/history/delete',{method:'POST',body:JSON.stringify({md})});
+  if(r.ok){ appState.reports = r.reports || []; renderHistory(); toast(t('hisDelOK')); }
+}
+
+/* ---------- 定时报告 ---------- */
+const WD = ['周一','周二','周三','周四','周五','周六','周日'];
+function openSchedule(){
+  document.getElementById('ovSchedule').classList.add('show');
+  const sch = appState.schedule || appState.config.schedule || null;
+  document.getElementById('schEnable').checked = !!(sch && sch.enabled);
+  if(sch){
+    if(sch.freq){
+      const radio = document.querySelector('input[name=sfreq][value=' + sch.freq + ']');
+      if(radio) radio.checked = true;
+    }
+    if(typeof sch.weekday === 'number'){
+      schWeek = [0,1,2,3,4,5,6].map(i=>i===sch.weekday);
+    }
+    document.getElementById('schTime').value = sch.time || '09:00';
+    const pr = document.querySelector('input[name=speriod][value=' + (sch.since||'daily') + ']');
+    if(pr) pr.checked = true;
+    document.getElementById('schBoot').checked = !!sch.boot;
+  }
+  document.getElementById('weekRow').style.display = document.querySelector('input[name=sfreq]:checked').value==='weekly'?'block':'none';
+  renderWeekdays();
+}
+document.querySelectorAll('input[name=sfreq]').forEach(r=>r.addEventListener('change',()=>{
+  document.getElementById('weekRow').style.display = document.querySelector('input[name=sfreq]:checked').value==='weekly'?'block':'none';
+}));
+function renderWeekdays(){
+  document.getElementById('weekDays').innerHTML = WD.map((w,i)=>
+    `<button class="wd ${schWeek[i]?'on':''}" onclick="toggleWd(${i})">${w}</button>`).join('');
+}
+function toggleWd(i){ schWeek = schWeek.map((_,j)=>j===i); renderWeekdays(); }
+async function saveSchedule(){
+  const enabled = document.getElementById('schEnable').checked;
+  const freq = document.querySelector('input[name=sfreq]:checked').value;
+  const time = document.getElementById('schTime').value;
+  const boot = document.getElementById('schBoot').checked;
+  const since = document.querySelector('input[name=speriod]:checked').value;
+  const weekday = Math.max(0, schWeek.findIndex(Boolean));
+  const r = await api('/api/schedule',{method:'POST',body:JSON.stringify({enabled,freq,weekday,time,since,boot})});
+  if(!r.ok){ toast(t('schFail') + (r.error||''),'err'); return; }
+  appState.schedule = r.schedule;
+  appState.config.schedule = r.schedule;
+  closeModal('ovSchedule');
+  const taskRes = (r.result && r.result.task) || {};
+  if(enabled){
+    const desc = (freq==='daily' ? t('schDaily') : `${t('schWeekly')} ${WD[weekday]}`) + ' ' + time;
+    if(taskRes.ok === false){
+      log('err','⏰ ' + t('schFail') + (taskRes.message || ('schtasks 退出码 ' + taskRes.status)));
+      toast(t('schFail') + (taskRes.message || taskRes.status),'err');
+    } else {
+      log('ok','⏰ ' + t('schDone') + '：' + desc + ' · ' + since);
+      toast(t('schDone') + ' · ' + desc);
+    }
+  } else {
+    log('info','⏰ ' + t('schOff'));
+    toast(t('schOff'));
+  }
+}
+
+/* ---------- 连通性检测 ---------- */
+async function connTest(){
+  log('sys','🔌 ' + t('connStart'));
+  const r = await api('/api/test-conn',{method:'POST'});
+  if(!r.ok){ log('err','❌ ' + (r.error||t('connNone'))); return; }
+  const results = (r.results||[]).sort((a,b)=> (b.ok-a.ok) || (a.ms-b.ms));
+  let okCount = 0;
+  for(const x of results){
+    if(x.ok) okCount++;
+    log(x.ok?'ok':'err', `🌐 ${x.name} ${x.ok?'✔':'✘'} ${x.detail} · ${x.ms}ms`);
+  }
+  if(okCount===0) log('err','⚠ ' + t('connNone'));
+  else log('ok',`✔ ${okCount}/${results.length} 个数据源可访问 · ${t('connDone')}`);
+}
+
+/* ---------- 设置 ---------- */
+function openSettings(){
+  const cfg = appState.config || {};
+  document.getElementById('ovSettings').classList.add('show');
+  document.getElementById('cfgApiBase').value = cfg.api_base || 'https://api.deepseek.com';
+  document.getElementById('cfgApiModel').value = cfg.api_model || 'deepseek-chat';
+  document.getElementById('cfgApiKey').value = cfg.api_key || '';
+  document.getElementById('cfgProxy').value = cfg.proxy || '';
+  document.getElementById('cfgTopN').value = cfg.top_n || 10;
+  document.querySelectorAll('input[name=engine]').forEach(r=>r.checked = (r.value===(cfg.engine||'auto')));
+  document.querySelectorAll('input[name=sourceMode]').forEach(r=>r.checked = (r.value===(cfg.source_mode||'auto')));
+  if(appState.dir) document.getElementById('aboutDir').textContent = appState.dir;
+}
+async function saveSettings(){
+  const body = {
+    api_base: document.getElementById('cfgApiBase').value.trim(),
+    api_model: document.getElementById('cfgApiModel').value.trim(),
+    api_key: document.getElementById('cfgApiKey').value.trim(),
+    proxy: document.getElementById('cfgProxy').value.trim(),
+    top_n: parseInt(document.getElementById('cfgTopN').value,10)||10,
+    engine: document.querySelector('input[name=engine]:checked').value,
+    source_mode: document.querySelector('input[name=sourceMode]:checked').value,
+  };
+  if(body.top_n<5||body.top_n>30){ body.top_n = 10; toast(t('setTopNHint'),'warn'); }
+  const r = await api('/api/config',{method:'POST',body:JSON.stringify(body)});
+  if(!r.ok){ toast('保存失败','err'); return; }
+  appState.config = r.config;
+  closeModal('ovSettings');
+  updateChips();
+  log('ok','⚙ ' + t('setSaved'));
+  toast(t('setSaved'));
+}
+async function testApi(){
+  const body = {
+    api_base: document.getElementById('cfgApiBase').value.trim(),
+    api_model: document.getElementById('cfgApiModel').value.trim(),
+    api_key: document.getElementById('cfgApiKey').value.trim(),
+  };
+  await api('/api/config',{method:'POST',body:JSON.stringify(body)});
+  log('info','—— 测试大模型 API：' + body.api_base + ' / ' + body.api_model + ' ——');
+  const r = await api('/api/test-api',{method:'POST'});
+  if(r.ok){ log('ok','  ✔ API 响应：' + r.reply); toast('✔ API 正常'); }
+  else { log('err','  ✘ ' + r.error); toast(r.error,'err'); }
+}
+function mtab(btn,idx){
+  document.querySelectorAll('#ovSettings .mtab').forEach((b,i)=>b.classList.toggle('on',i===idx));
+  document.querySelectorAll('#ovSettings .mview').forEach((v,i)=>v.classList.toggle('on',i===idx));
+}
+
+/* ---------- 报告目录 ---------- */
+async function openReports(){
+  const ov = document.getElementById('ovReports');
+  ov.classList.add('show');
+  const box = document.getElementById('dirList');
+  box.innerHTML = '<div class="empty"><p>正在读取报告目录…</p></div>';
+
+  let r = null;
+  try { r = await api('/api/history'); } catch (e) { r = null; }
+
+  if (!r || !r.ok) {
+    // 典型场景：直接双击 index.html（file://）或静态预览里打开，没有本地服务
+    const url = location.protocol === 'file:' ? 'http://127.0.0.1:5215' : location.origin;
+    box.innerHTML = `
+      <div class="empty">
+        <p>⚠ 读不到报告目录：本地服务未连接</p>
+        <p style="color:var(--dim);font-size:12px;line-height:1.9">
+          当前页面来源：<code>${escapeHtml(location.href)}</code><br>
+          请通过「启动.bat」或 <code>node server.js</code> 启动后访问
+          <a href="http://127.0.0.1:5215" target="_blank">http://127.0.0.1:5215</a>（不要在文件管理器里直接双击 index.html）
+        </p>
+      </div>`;
+    appState.offline = true;
+    toast('本地服务未连接，无法读取报告目录', 'err');
+    return;
+  }
+  appState.offline = false;
+  appState.reports = r.reports || [];
+  const reps = appState.reports || [];
+  if(!reps.length){ box.innerHTML = `<div class="empty"><p>${t('hisEmpty')}</p></div>`; return; }
+  box.innerHTML = reps.map(h=>`
+    <div class="his-item">
+      <div class="doc">📄</div>
+      <div class="info"><div class="nm">${escapeHtml(h.name)}.md</div><div class="tm">${escapeHtml(h.time)}</div></div>
+      <div class="acts">
+        <button class="mini-btn gh" onclick="openReport('${escapeHtml(h.md)}')">📝 ${t('openMd')}</button>
+        ${h.html?`<button class="mini-btn gh" onclick="openReport('${escapeHtml(h.html)}')">🌐 ${t('openHtml')}</button>`:''}
+      </div>
+    </div>`).join('');
+}
+async function openFolder(target){
+  let r = null;
+  try { r = await api('/api/open-folder',{method:'POST',body:JSON.stringify({target})}); } catch (e) { r = null; }
+  if(r && r.ok){ toast('📁 ' + r.dir); return; }
+  toast('无法打开文件夹' + (r && r.error ? '：' + r.error : '（本地服务未连接）'), 'err');
+}
+
+/* ---------- 二次开发 / 加速器 ---------- */
+function openDev(){ document.getElementById('ovDev').classList.add('show'); }
+async function openTool(){
+  log('info','📦 正在启动 GitHub 开源项目下载工具 …');
+  const r = await api('/api/open-tool',{method:'POST'});
+  if(r.ok){ window.open(r.url,'_blank'); log('ok','📦 ' + r.msg + ' ' + r.url); toast(r.msg); }
+  else { log('err','❌ ' + r.msg); toast(r.msg,'err'); }
+}
+function openHello(){
+  window.open('https://hellogithub.com/','_blank');
+  log('ok','👋 已打开 HelloGitHub');
+}
+function openAccelerator(){
+  window.open('https://pan.baidu.com/s/14bpQXNGXAazaxuHJY-PBUw?pwd=ve87','_blank');
+  log('ok','🚀 ' + t('btnAcc') + '（steamcommunity_302，提取码 ve87）');
+}
+
+/* ---------- 一键部署（Coolify） ---------- */
+const dpState = { target:'domain', polling:null, inspectTimer:null, repo:null, info:null, attached:false, mode:'local' };
+const ldState = { attached:false, resolveTimer:null, pathTimer:null, polling:null, cands:[], lastTarget:'', lastResult:null };
+
+function dpEl(id){ return document.getElementById(id); }
+function dpShow(id, on){ const el = dpEl(id); if (el) el.style.display = on ? '' : 'none'; }
+
+/* ---------- 部署窗口最小化（右下角悬浮卡，部署继续跑） ---------- */
+function miniSet(which, on){
+  const ovId = which === 'ai' ? 'ovAiDeploy' : 'ovDeploy';
+  const cardId = which === 'ai' ? 'miniAi' : 'miniDeploy';
+  const ov = document.getElementById(ovId);
+  const card = document.getElementById(cardId);
+  if (!ov || !card) return;
+  ov.classList.toggle('minimized', Boolean(on));
+  card.style.display = on ? '' : 'none';
+  if (on) miniSync();
+}
+function miniSync(){
+  const dCard = document.getElementById('miniDeploy');
+  if (dCard && dCard.style.display !== 'none'){
+    const mode = (typeof dpState !== 'undefined' && dpState.mode) ? dpState.mode : 'local';
+    const pctEl = document.getElementById(mode === 'coolify' ? 'dpPct' : 'ldPct');
+    const barEl = document.getElementById(mode === 'coolify' ? 'dpBar' : 'ldBar');
+    const txt = (pctEl && pctEl.textContent) || '准备中…';
+    document.getElementById('miniDeployStatus').textContent = (mode === 'coolify' ? '☁ Coolify · ' : '💻 本地 · ') + txt;
+    document.getElementById('miniDeployBar').style.width = (barEl && barEl.style.width) || '0%';
+  }
+  const aCard = document.getElementById('miniAi');
+  if (aCard && aCard.style.display !== 'none'){
+    const pct = document.getElementById('aiPct');
+    const logs = document.querySelectorAll('#aiLog div');
+    const last = logs.length ? logs[logs.length - 1].textContent.replace(/^\[[^\]]+\]\s*/, '') : '准备中…';
+    document.getElementById('miniAiStatus').textContent = ((pct && pct.textContent) || '0%') + ' · ' + String(last).slice(0, 60);
+    const bar = document.getElementById('aiBar');
+    document.getElementById('miniAiBar').style.width = (bar && bar.style.width) || '0%';
+  }
+}
+setInterval(miniSync, 700);
+
+/* ---------- AI 部署（DeepSeek Harness） ---------- */
+const aiState = { running: false, cursor: 0, timer: null, result: null };
+
+function aiEl(id){ return document.getElementById(id); }
+function aiLogLine(text){
+  const box = aiEl('aiLog');
+  if (!box) return;
+  box.classList.add('show');
+  const div = document.createElement('div');
+  div.textContent = text;
+  if (/❌|失败|错误|未找到/.test(text)) div.className = 'ln-err';
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+function aiResetUI(){
+  aiState.cursor = 0;
+  aiState.result = null;
+  aiEl('aiLog').innerHTML = '';
+  aiEl('aiLog').classList.remove('show');
+  aiEl('aiResult').style.display = 'none';
+  aiEl('aiResult').innerHTML = '';
+  aiEl('aiProgress').classList.remove('show');
+  aiEl('aiBar').style.width = '0';
+  aiEl('aiPct').textContent = '0%';
+  const c = aiEl('aiCancelBtn');
+  c.style.display = 'none';
+  c.disabled = false;
+  c.textContent = '⛔ 取消';
+  aiEl('aiStartBtn').disabled = false;
+}
+async function refreshAiHarnessStatus(){
+  const st = await api('/api/aideploy/status').catch(() => ({ ok: false, error: '无法连接本地服务' }));
+  const box = aiEl('aiCliStatus');
+  const txt = aiEl('aiCliText');
+  if (st && st.cliFound){
+    box.className = 'dp-status ok';
+    txt.innerHTML = '已找到 DeepSeek Harness：<code style="font-size:11px">' + escapeHtml(st.cli) + '</code>' +
+      '　' + (st.hasKey
+        ? '<span style="color:#159957">· 部署 Key 已配置</span>'
+        : '<span style="color:#b3302f">· 未配置部署 Key（点下方 ⚙ 配置）</span>');
+  } else {
+    box.className = 'dp-status err';
+    txt.textContent = (st && st.error)
+      ? ('无法连接本地服务：' + st.error)
+      : '未找到 DeepSeek Harness CLI（dsh.cmd）：请安装 Harness，或在 config.json 的 ai_deploy.cli 填写 dsh.cmd 完整路径';
+  }
+  return st;
+}
+async function openAiDeploy(){
+  miniSet('ai', false);
+  closeModal('ovDeploy');
+  aiResetUI();
+  aiEl('ovAiDeploy').classList.add('show');
+  const st = await refreshAiHarnessStatus();
+  if (st && st.busy){ aiState.running = true; aiStartPolling(); }
+}
+/* ---------- AI 部署 · 模型 Key 配置 ---------- */
+async function openAiCfg(){
+  aiEl('ovAiCfg').classList.add('show');
+  const inp = aiEl('aiCfgKey');
+  inp.value = '';
+  inp.type = 'password';
+  aiEl('aiCfgShow').textContent = '👁 显示';
+  const box = aiEl('aiCfgStatus');
+  const txt = aiEl('aiCfgStatusText');
+  const st = await api('/api/aideploy/config').catch(() => ({ ok: false, error: '无法连接本地服务' }));
+  if (!st || !st.ok){
+    box.className = 'dp-status err';
+    txt.textContent = '读取配置失败：' + ((st && st.error) || '无法连接本地服务');
+    return;
+  }
+  if (st.hasKey){
+    box.className = 'dp-status ok';
+    txt.innerHTML = '已配置模型 Key：<b>' + escapeHtml(st.maskedKey) + '</b>（输入新 Key 可覆盖；留空保存则不修改）';
+    inp.placeholder = '当前 ' + st.maskedKey + '（留空不修改）';
+  } else {
+    box.className = 'dp-status';
+    txt.textContent = '尚未配置模型 Key —— 填入 DeepSeek Key 并保存后，AI 部署才能调用模型。';
+    inp.placeholder = 'sk-****************';
+  }
+  const perm = aiEl('aiCfgPerm');
+  perm.value = ['danger-full-access', 'workspace-write'].includes(st.permissionMode) ? st.permissionMode : 'danger-full-access';
+  aiEl('aiCfgTestResult').textContent = '';
+  aiEl('aiCfgCli').innerHTML =
+    'Harness CLI：' + (st.cliFound ? '<code>' + escapeHtml(st.cli) + '</code>' : '<span style="color:#b3302f">未找到（请安装 Harness）</span>') +
+    '<br>DSH_HOME：<code>' + escapeHtml(st.dshHome || '') + '</code>';
+}
+function aiCfgToggleShow(){
+  const inp = aiEl('aiCfgKey');
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  aiEl('aiCfgShow').textContent = show ? '🙈 隐藏' : '👁 显示';
+}
+async function saveAiCfg(){
+  const inp = aiEl('aiCfgKey');
+  const key = inp.value.trim();
+  const body = { permission_mode: aiEl('aiCfgPerm').value };   // 权限模式总要带
+  if (key) body.api_key = key;                                 // 留空 = 不修改
+  const r = await api('/api/aideploy/config', { method: 'POST', body: JSON.stringify(body) });
+  if (!r || !r.ok){ toast((r && r.error) || '保存失败', 'err'); return; }
+  toast(key ? '模型 Key 已保存' : '未修改（Key 留空）');
+  log('ok', '⚙ AI 部署配置：' + (r.hasKey ? '模型 Key 已保存（' + r.maskedKey + '）' : '已清除'));
+  inp.value = '';
+  await refreshAiHarnessStatus();
+  await openAiCfg();
+}
+async function aiCfgClear(){
+  if (!confirm('确定要清除已保存的 AI 部署模型 Key 吗？')) return;
+  const r = await api('/api/aideploy/config', { method: 'POST', body: JSON.stringify({ api_key: '' }) });
+  if (!r || !r.ok){ toast((r && r.error) || '清除失败', 'err'); return; }
+  toast('已清除模型 Key');
+  log('warn', '⚙ AI 部署配置：模型 Key 已清除');
+  await refreshAiHarnessStatus();
+  await openAiCfg();
+}
+async function aiCfgTest(){
+  const btn = aiEl('aiCfgTestBtn');
+  const box = aiEl('aiCfgTestResult');
+  if (!btn || !box) return;
+  const typed = aiEl('aiCfgKey').value.trim();
+  btn.disabled = true;
+  const label = btn.textContent;
+  btn.textContent = '⏳ 测试中…（最多 90 秒）';
+  box.style.color = '#5d6c86';
+  box.textContent = '正在用' + (typed ? '你输入的 Key' : '已保存的 Key') + '调用一次模型，请稍候…';
+  let r;
+  try {
+    r = await api('/api/aideploy/test-key', { method: 'POST', body: JSON.stringify(typed ? { api_key: typed } : {}) });
+  } catch (e) { r = { ok: false, error: e.message }; }
+  btn.disabled = false;
+  btn.textContent = label || '🔌 测试 Key';
+  if (r && r.ok){
+    box.style.color = '#159957';
+    box.innerHTML = '✔ Key 可用（' + (r.ms || 0) + 'ms）：' + escapeHtml(String(r.reply || '').slice(0, 60));
+    log('ok', '🔌 AI 部署 Key 测试通过（' + (r.ms || 0) + 'ms）');
+    toast('Key 可用');
+  } else {
+    box.style.color = '#b3302f';
+    box.textContent = '✘ ' + ((r && r.error) || '测试失败');
+    log('err', '🔌 AI 部署 Key 测试失败：' + ((r && r.error) || ''));
+    toast((r && r.error) || 'Key 测试失败', 'err');
+  }
+}
+async function aiPickFolder(){
+  try {
+    const r = await api('/api/localdeploy/pickfolder', { method: 'POST', body: '{}' });
+    if (r && r.ok && r.path) aiEl('aiTarget').value = r.path;
+  } catch (e) { toast('打开文件夹选择框失败', 'err'); }
+}
+async function aiStart(){
+  if (aiState.running) return;
+  const project = aiEl('aiProject').value.trim();
+  const target = aiEl('aiTarget').value.trim();
+  if (!project){ toast('请填写项目名称或仓库网址', 'warn'); aiEl('aiProject').focus(); return; }
+  if (!target){ toast('请填写本地文件夹绝对路径', 'warn'); aiEl('aiTarget').focus(); return; }
+  aiResetUI();
+  aiEl('aiProgress').classList.add('show');
+  aiEl('aiLog').classList.add('show');
+  aiLogLine('正在提交 AI 部署任务…');
+  const btn = aiEl('aiStartBtn');
+  btn.disabled = true;
+  const r = await api('/api/aideploy/start', { method: 'POST', body: JSON.stringify({ project, target }) });
+  if (!r || !r.ok){
+    btn.disabled = false;
+    aiLogLine('❌ ' + ((r && (r.error || r.stage)) || '提交失败'));
+    toast((r && r.error) || '提交失败', 'err');
+    return;
+  }
+  aiState.running = true;
+  aiStartPolling();
+}
+function aiStartPolling(){
+  clearTimeout(aiState.timer);
+  aiEl('aiCancelBtn').style.display = '';
+  aiEl('aiStartBtn').disabled = true;
+  aiEl('aiProgress').classList.add('show');
+  aiEl('aiLog').classList.add('show');
+  aiPoll();
+}
+async function aiPoll(){
+  let j;
+  try { j = await api('/api/aideploy/job?from=' + aiState.cursor); }
+  catch (e) { aiState.timer = setTimeout(aiPoll, 1500); return; }
+  if (!j || !Array.isArray(j.logs)){ aiState.timer = setTimeout(aiPoll, 1500); return; }
+  for (const line of j.logs) aiLogLine(line);
+  aiState.cursor = j.next;
+  if (typeof j.percent === 'number'){
+    aiEl('aiBar').style.width = j.percent + '%';
+    aiEl('aiPct').textContent = Math.round(j.percent) + '%';
+  }
+  if (j.running){ aiState.timer = setTimeout(aiPoll, 700); return; }
+  aiState.running = false;
+  aiEl('aiStartBtn').disabled = false;
+  aiEl('aiCancelBtn').style.display = 'none';
+  aiRenderResult(j);
+  log(j.status === 'done' ? 'ok' : 'warn', 'AI 部署结束：' + (j.stage || j.status));
+}
+function aiRenderResult(j){
+  const box = aiEl('aiResult');
+  box.style.display = 'block';
+  const text = j.result && j.result.text ? String(j.result.text) : '';
+  const target = (j.result && j.result.target) || j.target || aiEl('aiTarget').value.trim();
+  aiState.result = { target };
+  if (j.status === 'done'){
+    box.innerHTML =
+      '<div>✅ <b>AI 部署完成</b>　耗时 ' + (j.costSec || 0) + ' 秒</div>' +
+      '<div style="margin-top:4px">📁 部署目录：<code>' + escapeHtml(target) + '</code></div>' +
+      (text ? '<pre style="white-space:pre-wrap;word-break:break-word;margin-top:10px;max-height:320px;overflow:auto;font-size:12.5px;line-height:1.75;color:#2b3a57">' + escapeHtml(text) + '</pre>' : '') +
+      '<div class="links"><button class="mini-btn gh" onclick="aiOpenFolder()">📂 打开目录</button>' +
+      '<button class="mini-btn" onclick="aiStart()">🔁 再部署一次</button></div>';
+    toast('AI 部署完成');
+  } else if (j.status === 'cancelled'){
+    box.innerHTML = '<div>⛔ <b>已取消</b>：' + escapeHtml(j.error || '用户取消') + '</div>';
+  } else {
+    box.innerHTML =
+      '<div style="color:#b3302f">❌ <b>部署未完成</b></div>' +
+      '<div style="margin-top:6px">' + escapeHtml(j.error || '未知错误') + '</div>' +
+      (text ? '<pre style="white-space:pre-wrap;word-break:break-word;margin-top:10px;max-height:300px;overflow:auto;font-size:12.5px">' + escapeHtml(text) + '</pre>' : '') +
+      '<div class="links"><button class="mini-btn gh" onclick="aiStart()">🔁 重试</button>' +
+      '<button class="mini-btn" onclick="openAiCfg()">⚙ 配置 Key / 权限</button>' +
+      '<button class="mini-btn" onclick="closeModal(\'ovAiDeploy\');openDeploy()">🚀 改用普通一键部署</button></div>';
+    toast('AI 部署未完成', 'err');
+  }
+  try { box.scrollIntoView({ block: 'nearest' }); } catch (e) { /* ignore */ }
+}
+async function aiOpenFolder(){
+  const p = (aiState.result && aiState.result.target) || aiEl('aiTarget').value.trim();
+  if (!p) return;
+  await api('/api/aideploy/open', { method: 'POST', body: JSON.stringify({ path: p }) });
+}
+async function aiCancel(){
+  const btn = aiEl('aiCancelBtn');
+  if (btn){ btn.disabled = true; btn.textContent = '⏳ 取消中…'; }
+  await api('/api/aideploy/cancel', { method: 'POST', body: '{}' });
+  aiLogLine('⛔ 正在取消…');
+}
+
+function openDeploy(){
+  miniSet('deploy', false);
+  dpEl('ovDeploy').classList.add('show');
+  if (!dpState.attached){
+    dpEl('dpRepo').addEventListener('input', ()=>{ clearTimeout(dpState.inspectTimer); dpState.inspectTimer = setTimeout(dpInspect, 600); });
+    const saved = JSON.parse(localStorage.getItem('dp_last') || '{}');
+    if (saved.repo) { dpEl('dpRepo').value = saved.repo; }
+    if (saved.target) dpSetTarget(saved.target, true);
+    if (saved.domain) dpEl('dpDomain').value = saved.domain;
+    if (saved.port) dpEl('dpPort').value = saved.port;
+    dpState.attached = true;
+  }
+  // 本地部署：恢复上次输入 + 绑定事件
+  if (!ldState.attached){
+    const last = JSON.parse(localStorage.getItem('ld_last') || '{}');
+    if (last.input) dpEl('ldInput').value = last.input;
+    if (last.target) dpEl('ldTarget').value = last.target;
+    if (last.branch) dpEl('ldBranch').value = last.branch;
+    dpEl('ldInput').addEventListener('input', ()=>{ clearTimeout(ldState.resolveTimer); ldState.resolveTimer = setTimeout(ldResolve, 700); });
+    dpEl('ldTarget').addEventListener('input', ()=>{ clearTimeout(ldState.pathTimer); ldState.pathTimer = setTimeout(ldCheckPath, 500); });
+    dpEl('ldTarget').addEventListener('blur', ldCheckPath);
+    ldState.attached = true;
+  }
+  dpSetMode(dpState.mode || 'local');
+  dpRefreshStatus();
+  if (dpEl('dpRepo').value.trim()) dpInspect();
+  if (dpEl('ldInput').value.trim()) ldResolve();
+  if (dpEl('ldTarget').value.trim()) ldCheckPath();
+  // 同步问题总结按钮：优先本次任务，其次读取上次落盘的总结
+  api('/api/localdeploy/job').then(async j => {
+    if (j && j.hasSummary) { ldUpdateSummaryBtn(j.issueCounts, true); return; }
+    const m = await api('/api/localdeploy/summary').catch(() => null);
+    if (m && m.ok && m.summary) ldUpdateSummaryBtn(m.summary.counts, true);
+  }).catch(() => {});
+}
+
+/** 切换「本地路径部署 / Coolify 远程部署」 */
+function dpSetMode(m){
+  dpState.mode = m;
+  dpEl('dpModeSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.m === m));
+  dpShow('ldPane', m === 'local');
+  dpShow('dpCoolifyPane', m === 'coolify');
+  if (m === 'coolify') { dpRefreshStatus(); if (dpEl('dpRepo').value.trim()) dpInspect(); }
+  else if (dpEl('ldInput').value.trim()) ldResolve();
+}
+
+async function dpRefreshStatus(){
+  const box = dpEl('dpStatus'), txt = dpEl('dpStatusTxt'), btn = dpEl('dpTokenBtn');
+  box.className = 'dp-status';
+  txt.textContent = t('dpChecking');
+  try {
+    const r = await api('/api/coolify/status');
+    if (!r.reachable){
+      box.classList.add('err');
+      txt.textContent = t('dpOffline') + '（' + (r.detail || r.base) + '）';
+      btn.style.display = '';
+      return;
+    }
+    if (!r.authed){
+      box.classList.add('err');
+      txt.textContent = t('dpNoToken');
+      btn.style.display = '';
+      dpShow('dpTokenBox', true);
+      dpEl('dpBase').value = r.base || 'http://localhost:8000';
+      return;
+    }
+    box.classList.add('ok');
+    txt.textContent = t('dpOnline') + ' · ' + r.base;
+    btn.style.display = 'none';
+  } catch (e) {
+    box.classList.add('err');
+    txt.textContent = '✗ ' + e.message;
+  }
+}
+
+function dpToggleToken(){ const box = dpEl('dpTokenBox'); dpShow('dpTokenBox', box.style.display === 'none'); }
+
+async function dpSaveToken(){
+  const token = dpEl('dpToken').value.trim();
+  const base = dpEl('dpBase').value.trim() || 'http://localhost:8000';
+  if (!token) { toast('请先粘贴 API Token', 'warn'); return; }
+  const r = await api('/api/coolify/token', { method:'POST', body: JSON.stringify({ token, base }) });
+  if (r.ok){ toast('✔ Token 已保存'); dpEl('dpToken').value = ''; dpShow('dpTokenBox', false); dpRefreshStatus(); }
+  else { toast(r.error || '保存失败', 'err'); }
+}
+
+/** 校验仓库并预填参数 */
+async function dpInspect(){
+  const repo = dpEl('dpRepo').value.trim();
+  const info = dpEl('dpRepoInfo');
+  dpState.repo = null; dpState.info = null;
+  if (!repo){ info.textContent = ''; return; }
+  info.textContent = '正在解析仓库…';
+  const r = await api('/api/coolify/inspect', { method:'POST', body: JSON.stringify({ repo }) });
+  if (!r.ok){ info.innerHTML = '<span style="color:var(--red)">✗ ' + escapeHtml(r.error || '无法解析') + '</span>'; return; }
+  dpState.repo = r.repo; dpState.info = r;
+  const bits = [];
+  bits.push('✓ ' + escapeHtml(r.repo.owner + '/' + r.repo.repo));
+  if (r.stars != null) bits.push('⭐ ' + Number(r.stars).toLocaleString());
+  if (r.lang) bits.push('🧩 ' + escapeHtml(r.lang));
+  if (r.branch) bits.push('🌿 ' + escapeHtml(r.branch));
+  if (r.sizeKB) bits.push('💾 ' + (r.sizeKB > 1024 ? (r.sizeKB/1024).toFixed(1) + ' MB' : r.sizeKB + ' KB'));
+  if (r.offline) bits.push('（离线，参数为默认值）');
+  info.innerHTML = bits.map(b => `<span class="dp-chip">${b}</span>`).join('');
+  // 预填
+  if (!dpEl('dpBranch').value) dpEl('dpBranch').value = r.suggest.branch;
+  if (!dpEl('dpCport').value) dpEl('dpCport').value = r.suggest.port;
+  dpEl('dpPack').value = dpEl('dpPack').value || '';
+  if (dpState.target !== 'port' && !dpEl('dpDomain').value) dpEl('dpDomain').value = dpDomainFor(r.repo.repo);
+}
+
+function dpDomainFor(name){
+  return String(name || 'app').toLowerCase().replace(/[^a-z0-9-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40) + '.localhost';
+}
+
+function dpSetTarget(kind, silent){
+  dpState.target = kind;
+  document.querySelectorAll('#dpTargetSeg button').forEach(b => b.classList.toggle('on', b.dataset.t === kind));
+  dpShow('dpDomain', kind !== 'port');
+  dpShow('dpPort', kind === 'port');
+  const hint = dpEl('dpTargetHint');
+  if (kind === 'domain') hint.textContent = '自动生成 http://项目名.localhost（Chrome/Edge 会把 *.localhost 解析到本机）';
+  else if (kind === 'port') hint.textContent = '选一个本机没被占用的端口，部署后通过 http://localhost:端口 访问';
+  else hint.textContent = '填写自己的域名，如 http://my-app.127.0.0.1.nip.io（需能解析到本机）';
+  if (!silent && kind !== 'port' && !dpEl('dpDomain').value && dpState.repo) dpEl('dpDomain').value = dpDomainFor(dpState.repo.repo);
+}
+
+function dpRenderLogs(lines){
+  const box = dpEl('dpLog');
+  box.classList.add('show');
+  box.innerHTML = (lines || []).map(l => `<div class="${/❌|错误|失败/.test(l) ? 'ln-err' : ''}">${escapeHtml(l)}</div>`).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+async function dpStart(){
+  const repo = dpEl('dpRepo').value.trim();
+  if (!repo){ toast('请先填写要部署的仓库地址', 'warn'); return; }
+  const target = dpState.target === 'port'
+    ? { kind:'port', port: dpEl('dpPort').value.trim() || '8080' }
+    : { kind: dpState.target, domain: dpEl('dpDomain').value.trim() };
+  const advanced = {
+    branch: dpEl('dpBranch').value.trim(),
+    build_pack: dpEl('dpPack').value,
+    port: dpEl('dpCport').value.trim(),
+  };
+  dpEl('dpProgress').classList.add('show');
+  dpEl('dpBar').style.width = '0%';
+  dpEl('dpPct').textContent = '0%';
+  dpShow('dpResult', false);
+  dpEl('dpStartBtn').disabled = true;
+  dpShow('dpCancelBtn', true);
+  dpRenderLogs(['正在提交部署任务…']);
+
+  const r = await api('/api/coolify/deploy', { method:'POST', body: JSON.stringify({ repo, target, advanced }) });
+  if (!r.ok){
+    dpEl('dpStartBtn').disabled = false; dpShow('dpCancelBtn', false);
+    if (r.needToken){ dpShow('dpTokenBox', true); toast('请先配置 Coolify API Token', 'warn'); }
+    else toast(r.error || '提交失败', 'err');
+    dpRenderLogs(['❌ ' + (r.error || '提交失败')]);
+    return;
+  }
+  localStorage.setItem('dp_last', JSON.stringify({ repo, target: dpState.target, domain: dpEl('dpDomain').value.trim(), port: dpEl('dpPort').value.trim() }));
+  log('info','🚀 一键部署：' + repo);
+  clearInterval(dpState.polling);
+  dpState.polling = setInterval(dpPoll, 1200);
+}
+
+async function dpPoll(){
+  let r;
+  try { r = await api('/api/coolify/job'); } catch (e){ return; }
+  dpEl('dpBar').style.width = (r.percent || 0) + '%';
+  dpEl('dpPct').textContent = (r.percent || 0) + '% · ' + (r.stage || '');
+  dpRenderLogs(r.logs || []);
+  if (r.status === 'done' && r.result){
+    clearInterval(dpState.polling); dpState.polling = null;
+    dpEl('dpStartBtn').disabled = false; dpShow('dpCancelBtn', false);
+    const x = r.result;
+    dpEl('dpResult').innerHTML = `
+      <div>✅ <b>部署成功</b>：${escapeHtml(x.repo)}（${escapeHtml(x.host)}）</div>
+      <div>🌐 访问地址：<a href="${escapeHtml(x.url)}" target="_blank" style="color:var(--blue)">${escapeHtml(x.url)}</a></div>
+      <div>🖥 服务器：${escapeHtml(x.server)} ｜ 🌿 分支：${escapeHtml(x.branch)} ｜ 📦 构建：${escapeHtml(x.buildPack)} ｜ 🔌 容器端口：${escapeHtml(x.containerPort)}</div>
+      <div class="links">
+        <button class="mini-btn gh" onclick="window.open('${escapeHtml(x.url)}','_blank')">🌐 打开应用</button>
+        <button class="mini-btn gh" onclick="window.open('${escapeHtml(x.panel)}','_blank')">🎛 打开 Coolify 项目</button>
+      </div>`;
+    dpShow('dpResult', true);
+    log('ok','🚀 部署成功：' + x.url);
+    toast('✔ 部署成功');
+  } else if (r.status === 'error'){
+    clearInterval(dpState.polling); dpState.polling = null;
+    dpEl('dpStartBtn').disabled = false; dpShow('dpCancelBtn', false);
+    toast(r.error || '部署失败', 'err');
+    log('err','❌ 部署失败：' + (r.error || ''));
+  }
+}
+
+async function dpCancel(){
+  await api('/api/coolify/cancel', { method:'POST', body:'{}' });
+  toast('已请求取消', 'warn');
+  dpShow('dpCancelBtn', false);
+}
+
+function openCoolifyGuide(){ window.open('/coolify/guide.html','_blank'); }
+
+/* ============================================================
+   一键部署 · 本地路径（自动 环境检测/依赖/构建/落位/校验）
+============================================================ */
+
+/** 解析项目名或网址（纯名称会自动搜索） */
+async function ldResolve(){
+  const input = dpEl('ldInput').value.trim();
+  const box = dpEl('ldResolve'), cands = dpEl('ldCands');
+  ldState.cands = [];
+  cands.innerHTML = '';
+  if (!input){ box.innerHTML = ''; return; }
+  box.innerHTML = '<span style="color:var(--dim)">正在解析…</span>';
+  let r;
+  try { r = await api('/api/localdeploy/resolve', { method:'POST', body: JSON.stringify({ input }) }); }
+  catch (e){ box.innerHTML = '<span class="ld-path err">✗ ' + escapeHtml(e.message) + '</span>'; return; }
+
+  if (!r.ok){ box.innerHTML = '<span class="ld-path err">✗ ' + escapeHtml(r.error || '解析失败') + '</span>'; return; }
+  if (r.mode === 'repo'){
+    ldState.cands = [r.repo];
+    box.innerHTML = '<span class="ld-path ok">✓ 仓库：' + escapeHtml(r.repo.full) + '（' + escapeHtml(r.repo.host) + '）</span>';
+    ldFillTargetFromRepo(r.repo.repo);
+    return;
+  }
+  // 搜索结果
+  ldState.cands = r.candidates || [];
+  box.innerHTML = '<span class="ld-path warn">找到 ' + ldState.cands.length + ' 个同名项目，点一个继续：</span>';
+  cands.innerHTML = ldState.cands.map((c, i) => `
+    <div class="ld-cand" onclick="ldPickCand(${i})">
+      <b>${escapeHtml(c.full)}</b>
+      <span style="color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml((c.desc || '').slice(0, 40))}</span>
+      <span class="meta">⭐ ${Number(c.stars || 0).toLocaleString()} · ${escapeHtml(c.lang || '-')}</span>
+    </div>`).join('');
+}
+
+function ldPickCand(i){
+  const c = ldState.cands[i];
+  if (!c) return;
+  dpEl('ldInput').value = c.full;
+  dpEl('ldCands').innerHTML = '';
+  dpEl('ldResolve').innerHTML = '<span class="ld-path ok">✓ 已选择：' + escapeHtml(c.full) + '</span>';
+  if (c.branch) dpEl('ldBranch').placeholder = c.branch;
+  ldFillTargetFromRepo(String(c.full).split('/').pop());
+}
+
+/** 目标路径留空时，按项目名给一个建议路径（取程序目录的上一级） */
+async function ldFillTargetFromRepo(name){
+  if (dpEl('ldTarget').value.trim()) return;
+  if (!window.__appDir){
+    try { const s = await api('/api/state'); window.__appDir = (s && s.dir) || ''; } catch (e) { window.__appDir = ''; }
+  }
+  const base = String(window.__appDir || 'E:\\pc\\桌面\\github\\html').replace(/[\\/]+$/, '');
+  const parent = base.replace(/[\\/][^\\/]+$/, '') || base;   // 目标填父目录，部署时自动建 <项目名> 子文件夹
+  dpEl('ldTarget').value = parent;
+  ldCheckPath();
+}
+
+/** 从输入里取项目名（owner/repo、网址、git@ 都能识别） */
+function ldRepoNameFromInput(input){
+  const s = String(input || '').trim();
+  if (!s) return '';
+  let m = s.match(/^git@[^:]+:([^/\s]+)\/([^/\s]+?)(?:\.git)?$/i);
+  if (m) return m[2];
+  m = s.match(/(?:github|gitee)\.com\/([^/\s]+)\/([^/\s#?]+)/i);
+  if (m) return m[2].replace(/\.git$/i, '');
+  m = s.match(/^([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?$/);
+  if (m) return m[2];
+  return s.replace(/[^\w.-]+/g, '').slice(0, 40);
+}
+
+/** 校验目标路径 */
+async function ldCheckPath(){
+  const p = dpEl('ldTarget').value.trim();
+  const box = dpEl('ldPathState');
+  if (!p){ box.className = 'hint'; box.textContent = '支持 E:\\xxx / E:/xxx；不存在会自动创建，非空目录会先备份。'; return; }
+  let r;
+  try { r = await api('/api/localdeploy/checkpath', { method:'POST', body: JSON.stringify({ path: p }) }); }
+  catch (e){ box.className = 'ld-path err'; box.textContent = '✗ ' + e.message; return; }
+
+  if (!r.ok){
+    box.className = 'ld-path err';
+    box.textContent = '✗ ' + r.error;
+    return;
+  }
+  let msg = '✓ 路径可用：' + r.path;
+  let cls = 'ld-path ok';
+  if (!r.exists) msg += '（不存在，部署时自动创建）';
+  else if (r.empty) msg += '（空目录）';
+  else { msg += '（非空：' + r.entries.slice(0, 3).join('、') + (r.entries.length > 3 ? ' …' : '') + '）'; cls = 'ld-path warn'; }
+  // 提示最终部署目录（默认会在其中建「项目名」子文件夹）
+  const rn = ldRepoNameFromInput(dpEl('ldInput').value);
+  const mode = dpEl('ldMode').value;
+  if (rn && mode !== 'direct') {
+    msg += '　→ 实际部署目录：' + r.path.replace(/[\\/]+$/, '') + '\\' + rn;
+  }
+  box.className = cls;
+  box.textContent = msg;
+  ldState.lastTarget = r.path;
+}
+
+/** 系统文件夹选择框 */
+async function ldPickFolder(){
+  toast('请在弹窗里选择文件夹…', 'warn');
+  let r;
+  try { r = await api('/api/localdeploy/pickfolder', { method:'POST', body:'{}' }); }
+  catch (e){ toast('打开选择框失败：' + e.message, 'err'); return; }
+  if (r.ok && r.path){ dpEl('ldTarget').value = r.path; ldCheckPath(); }
+  else toast('未选择文件夹', 'warn');
+}
+
+/** 开始部署 */
+async function ldStart(){
+  const input = dpEl('ldInput').value.trim();
+  const target = dpEl('ldTarget').value.trim();
+  if (!input){ toast('请先填写项目名称或仓库网址', 'warn'); return; }
+  if (!target){ toast('请先填写部署目标路径', 'warn'); return; }
+
+  // 前端先做一次明显格式校验，避免无意义请求
+  if (!/^[A-Za-z]:[\\/]/.test(target) && !/^\\\\/.test(target)){
+    dpEl('ldPathState').className = 'ld-path err';
+    dpEl('ldPathState').textContent = '✗ 路径必须是绝对路径（带盘符），例如 E:\\pc\\桌面\\github\\my-app';
+    toast('目标路径格式不正确', 'err');
+    return;
+  }
+
+  const payload = {
+    input, target,
+    branch: dpEl('ldBranch').value.trim(),
+    mode: dpEl('ldMode').value,
+    install: dpEl('ldInstall').checked,
+    build: dpEl('ldBuild').checked,
+  };
+  localStorage.setItem('ld_last', JSON.stringify({ input, target, branch: payload.branch }));
+
+  dpEl('ldStartBtn').disabled = true;
+  dpShow('ldCancelBtn', true);
+  const ldCb = dpEl('ldCancelBtn'); ldCb.disabled = false; ldCb.innerHTML = '⛔ <span>取消</span>';
+  dpEl('ldProgress').classList.add('show');
+  dpEl('ldBar').style.width = '0%';
+  dpEl('ldPct').textContent = '0%';
+  dpShow('ldResult', false);
+  ldUpdateSummaryBtn({ error: 0, warn: 0 }, false);
+  dpRenderLog(['正在提交部署任务…']);
+
+  let r;
+  try { r = await api('/api/localdeploy/start', { method:'POST', body: JSON.stringify(payload) }); }
+  catch (e){ r = { ok:false, error: e.message }; }
+
+  if (!r.ok){
+    dpEl('ldStartBtn').disabled = false;
+    dpShow('ldCancelBtn', false);
+    dpEl('ldPct').textContent = '0% · ' + (r.stage || '失败');
+    dpRenderLog(['❌ ' + (r.error || '提交失败')]);
+    toast(r.error || '提交失败', 'err');
+    return;
+  }
+  log('info', '🚀 开始本地部署：' + input + ' → ' + target);
+  clearInterval(ldState.polling);
+  ldState.polling = setInterval(ldPoll, 1000);
+}
+
+function dpRenderLog(lines){
+  const box = dpEl('ldLog');
+  box.classList.add('show');
+  box.innerHTML = (lines || []).map(l => `<div class="${/❌|✗|失败|错误/.test(l) ? 'ln-err' : ''}">${escapeHtml(l)}</div>`).join('');
+  box.scrollTop = box.scrollHeight;
+}
+function ldRenderLog(lines){ dpRenderLog(lines); }
+
+async function ldPoll(){
+  let j;
+  try { j = await api('/api/localdeploy/job'); } catch (e){ return; }
+  dpEl('ldBar').style.width = (j.percent || 0) + '%';
+  dpEl('ldPct').textContent = (j.percent || 0) + '% · ' + (j.stage || '');
+  ldRenderLog(j.logs || []);
+  // 实时同步「问题总结」按钮：一旦出现错误/提示就点亮
+  if (j.issueCounts) ldUpdateSummaryBtn(j.issueCounts, j.hasSummary);
+
+  if (j.status === 'done' && j.result){
+    clearInterval(ldState.polling); ldState.polling = null;
+    dpEl('ldStartBtn').disabled = false;
+    dpShow('ldCancelBtn', false);
+    const x = j.result;
+    ldState.lastResult = x;
+    dpEl('ldResult').innerHTML = `
+      <div>✅ <b>部署成功</b>　${escapeHtml(x.repo)}　（${escapeHtml(x.type)} · 分支 ${escapeHtml(x.branch)}）</div>
+      ${x.deployVerdict ? `<div class="ld-verdict ${x.deployVerdict.decision === 'need' ? 'need' : 'none'}">
+        ${x.deployVerdict.decision === 'need' ? '🚀' : '📄'} <b>${escapeHtml(x.deployVerdict.label)}</b>
+        <span>${escapeHtml(x.deployVerdict.reason)}</span>
+        ${x.deployVerdict.hint ? `<em>${escapeHtml(x.deployVerdict.hint)}</em>` : ''}
+      </div>` : ''}
+      <div>📁 部署目录：<span style="font-family:'Share Tech Mono',monospace">${escapeHtml(x.target)}</span>${x.root && x.root !== x.target ? `<span style="color:var(--dim)">（父目录 ${escapeHtml(x.root)}）</span>` : ''}</div>
+      <div>📦 ${x.files} 个文件 ｜ 💾 ${x.sizeMB} MB ｜ ⏱ ${x.cost} 秒${x.backup ? ' ｜ 🗂 原目录已备份' : ''}</div>
+      ${x.startCommand ? `<div>▶ 启动命令：<code>${escapeHtml(x.startCommand)}</code></div>` : ''}
+      ${x.localUrl ? `<div>🌐 本地访问：<a href="${escapeHtml(x.localUrl)}" target="_blank">${escapeHtml(x.localUrl)}</a>（点「▶ 启动」后生效）</div>` : ''}
+      ${(x.warnings || []).length ? `<div style="color:#a3720f">⚠ ${x.warnings.map(escapeHtml).join('；')}</div>` : ''}
+      ${(x.pythonEnv === 'blocked' || x.pythonEnv === 'failed') ? `<div style="color:#a3720f">🧩 依赖未装齐${x.pythonWant ? `（该项目建议 Python ${escapeHtml(x.pythonWant)}）` : ''} —— 源码已在目录里，可点「补装依赖」继续</div>` : ''}
+      <div class="links">
+        <button class="mini-btn gh" onclick="ldOpenFolder()">📂 打开目标目录</button>
+        <button class="mini-btn gh" onclick="ldLaunch()">▶ 启动项目</button>
+        <button class="mini-btn gh" onclick="ldCopyPath()">📋 复制路径</button>
+        ${(x.pythonEnv === 'blocked' || x.pythonEnv === 'failed') ? '<button class="mini-btn gh" onclick="ldInstallDeps()">🧩 补装依赖</button>' : ''}
+        ${(x.warnings || []).length ? '<button class="mini-btn gh" onclick="ldOpenSummary()">📋 问题总结</button>' : ''}
+      </div>`;
+    dpShow('ldResult', true);
+    log('ok', '✅ 部署完成：' + x.target);
+    toast('✔ 部署成功：' + x.files + ' 个文件');
+  } else if (j.status === 'cancelled'){
+    clearInterval(ldState.polling); ldState.polling = null;
+    dpEl('ldStartBtn').disabled = false;
+    dpShow('ldCancelBtn', false);
+    const cb = dpEl('ldCancelBtn'); cb.disabled = false; cb.innerHTML = '⛔ <span>取消</span>';
+    dpEl('ldPct').textContent = (j.percent || 0) + '% · 已取消';
+    dpEl('ldResult').innerHTML = `
+      <div style="color:#8a6110">⛔ <b>已取消</b>　已停止后续步骤，目标路径保持不变。</div>
+      <div style="color:var(--muted);font-size:12px">取消不是故障；重新点「🚀 开始部署」可以再来一次。</div>
+      <div class="links">
+        <button class="mini-btn gh" onclick="ldOpenSummary()">📋 问题总结</button>
+        <button class="mini-btn gh" onclick="ldOpenHistory()">🕘 部署记录</button>
+      </div>`;
+    dpShow('ldResult', true);
+    log('warn', '⛔ 已取消本次部署');
+  } else if (j.status === 'error'){
+    clearInterval(ldState.polling); ldState.polling = null;
+    dpEl('ldStartBtn').disabled = false;
+    dpShow('ldCancelBtn', false);
+    dpEl('ldResult').innerHTML = `
+      <div style="color:var(--red)">❌ <b>部署失败</b>　阶段：${escapeHtml(j.stage || '-')}</div>
+      <div>${escapeHtml(j.error || '')}</div>
+      <div style="color:var(--muted);font-size:12px">已自动汇总本次问题（错误 ${(j.issueCounts && j.issueCounts.error) || 0} 条、提示 ${(j.issueCounts && j.issueCounts.warn) || 0} 条），点「📋 问题总结」查看根因与处理建议。</div>
+      <div class="links">
+        <button class="mini-btn gh" onclick="ldOpenSummary()">📋 查看问题总结</button>
+        <button class="mini-btn gh" onclick="ldOpenHistory()">🕘 查看部署记录</button>
+      </div>`;
+    dpShow('ldResult', true);
+    log('err', '❌ 部署失败：' + (j.error || ''));
+    toast('部署失败：' + (j.stage || ''), 'err');
+  }
+}
+
+async function ldCancel(){
+  // 1) 立刻停掉轮询与按钮状态（不等服务端回应）
+  if (ldState.polling){ clearInterval(ldState.polling); ldState.polling = null; }
+  const btn = dpEl('ldCancelBtn');
+  btn.disabled = true;
+  btn.innerHTML = '⛔ <span>取消中…</span>';
+  dpShow('ldCancelBtn', false);   // 立刻隐藏，避免误以为还在进行
+  const pctNow = (dpEl('ldPct').textContent.split('·')[0] || '').trim();
+  dpEl('ldPct').textContent = (pctNow ? pctNow + ' · ' : '') + '正在取消…';
+
+  // 2) 立刻把界面切成「已取消」，不再转圈
+  dpEl('ldStartBtn').disabled = false;
+  dpEl('ldResult').innerHTML = `
+    <div style="color:#8a6110">⛔ <b>已取消</b>　已停止后续步骤，目标路径保持不变。</div>
+    <div style="color:var(--muted);font-size:12px">取消不是故障；重新点「🚀 开始部署」可以再来一次。本次记录已写入部署记录。</div>
+    <div class="links">
+      <button class="mini-btn gh" onclick="ldOpenSummary()">📋 问题总结</button>
+      <button class="mini-btn gh" onclick="ldOpenHistory()">🕘 部署记录</button>
+    </div>`;
+  dpShow('ldResult', true);
+  dpEl('ldPct').textContent = (pctNow ? pctNow + ' · ' : '') + '已取消';
+  toast('已取消本次部署', 'warn');
+  log('warn', '⛔ 已取消本次部署');
+
+  // 3) 通知服务端杀进程（不阻塞界面）
+  api('/api/localdeploy/cancel', { method:'POST', body:'{}' }).then(() => {
+    // 同步一下问题总结按钮（取消也会生成总结）
+    setTimeout(() => api('/api/localdeploy/job').then(j => {
+      ldUpdateSummaryBtn(j.issueCounts, j.hasSummary);
+      btn.style.display = 'none';
+      btn.disabled = false;
+      btn.innerHTML = '⛔ <span>取消</span>';
+    }).catch(() => {}), 400);
+  }).catch(() => {});
+}
+
+/** 停止所有部署：取消当前任务 + 清残留进程 + 清暂存目录 */
+async function ldStopAll(){
+  const btn = dpEl('ldStopAllBtn');
+  if (btn.disabled) return;
+  if (!confirm('确定要停止所有部署任务吗？\n\n• 将取消当前部署（如有）\n• 清理残留的 npm / git 子进程\n• 删除临时暂存目录\n\n目标目录中已写入的文件不会被删除。')) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '⏳ <span>停止中…</span>';
+  if (ldState.polling){ clearInterval(ldState.polling); ldState.polling = null; }
+  dpShow('ldCancelBtn', false);
+  dpEl('ldStartBtn').disabled = false;
+  dpEl('ldPct').textContent = '正在停止所有部署…';
+  log('warn', '⏹ 正在停止所有部署…');
+
+  let r = null;
+  try { r = await api('/api/localdeploy/stop-all', { method:'POST', body:'{}' }); } catch (e) { r = null; }
+
+  btn.disabled = false;
+  btn.innerHTML = '⏹ <span>停止所有部署</span>';
+
+  if (!r || !r.ok) {
+    toast('停止失败：' + ((r && r.error) || '服务未响应'), 'err');
+    log('err', '❌ 停止所有部署失败');
+    return;
+  }
+
+  const killed = (r.killed || []).length;
+  const staging = (r.stagingRemoved || []).length;
+  const parts = [];
+  if (r.cancelled) parts.push('已取消当前任务');
+  if (killed) parts.push('清理 ' + killed + ' 个残留进程');
+  if (staging) parts.push('删除 ' + staging + ' 个暂存目录');
+  if (!parts.length) parts.push('当前没有运行中的部署');
+
+  dpEl('ldResult').innerHTML = `
+    <div style="color:#8a6110">⏹ <b>已停止所有部署</b></div>
+    <div>${escapeHtml(parts.join('，'))}</div>
+    ${(r.killed || []).length ? `<div style="color:var(--muted);font-size:12px">已终止进程：${r.killed.map(k => escapeHtml((k.name || '?') + ' (PID ' + k.pid + ')')).join('、')}</div>` : ''}
+    ${(r.errors || []).length ? `<div style="color:#b45309;font-size:12px">⚠ 部分操作失败：${escapeHtml(r.errors.join('；'))}</div>` : ''}
+    <div class="links">
+      <button class="mini-btn gh" onclick="ldOpenSummary()">📋 问题总结</button>
+      <button class="mini-btn gh" onclick="ldOpenHistory()">🕘 部署记录</button>
+    </div>`;
+  dpShow('ldResult', true);
+  dpEl('ldPct').textContent = '已停止';
+  toast('⏹ 已停止所有部署', 'ok');
+  log('ok', '⏹ 已停止所有部署：' + parts.join('，'));
+}
+
+async function ldOpenFolder(){
+  const p = (ldState.lastResult && ldState.lastResult.target) || dpEl('ldTarget').value.trim();
+  if (!p){ toast('还没有目标路径', 'warn'); return; }
+  const r = await api('/api/localdeploy/open', { method:'POST', body: JSON.stringify({ path:p }) });
+  if (r.ok){
+    toast('📂 已请求打开：' + p + '（若没弹出，按「复制路径」手动打开）', 'ok');
+    log('ok', '📂 打开目录：' + p);
+  } else {
+    toast('打开失败：' + (r.error || '未知原因') + '（可点「复制路径」手动打开）', 'err');
+  }
+}
+async function ldLaunch(){
+  const p = (ldState.lastResult && ldState.lastResult.target) || dpEl('ldTarget').value.trim();
+  if (!p){ toast('还没有目标路径', 'warn'); return; }
+  const r = await api('/api/localdeploy/launch', { method:'POST', body: JSON.stringify({ path:p }) });
+  if (r.ok){
+    toast('✔ 已启动（黑窗口关闭即停止）', 'ok');
+    log('ok', '▶ 启动项目：' + p);
+  } else {
+    toast('启动失败：' + (r.error || '未知原因'), 'err');
+  }
+}
+/** 补装依赖：对已部署但依赖未装齐的目录，重新执行依赖安装 */
+async function ldInstallDeps(){
+  const p = (ldState.lastResult && ldState.lastResult.target) || dpEl('ldTarget').value.trim();
+  if (!p){ toast('没有可补装依赖的目录', 'warn'); return; }
+  dpEl('ldStartBtn').disabled = true;
+  dpEl('ldProgress').classList.add('show');
+  dpRenderLog(['开始补装依赖：' + p]);
+  let r;
+  try { r = await api('/api/localdeploy/install-deps', { method:'POST', body: JSON.stringify({ path: p }) }); }
+  catch (e){ toast('补装失败：' + e.message, 'err'); dpEl('ldStartBtn').disabled = false; return; }
+  if (!r.ok){ toast(r.error || '补装失败', 'err'); dpEl('ldStartBtn').disabled = false; return; }
+  toast('🧩 正在补装依赖…');
+  clearInterval(ldState.polling);
+  ldState.polling = setInterval(ldPoll, 1000);
+}
+
+async function ldCopyPath(){  const p = (ldState.lastResult && ldState.lastResult.target) || dpEl('ldTarget').value.trim();
+  try { await navigator.clipboard.writeText(p); toast('已复制路径'); } catch (e){ toast('复制失败', 'err'); }
+}
+
+/* ---------- 问题总结 ---------- */
+
+/** 更新「📋 问题总结」按钮的可用状态与计数徽标 */
+function ldUpdateSummaryBtn(counts, hasSummary){
+  const btn = dpEl('ldSummaryBtn'), badge = dpEl('ldSumBadge');
+  if (!btn) return;
+  const err = (counts && counts.error) || 0;
+  const warn = (counts && counts.warn) || 0;
+  const total = err + warn;
+  btn.disabled = !(hasSummary || total);
+  btn.classList.toggle('has-error', err > 0);
+  btn.classList.toggle('has-warn', err === 0 && warn > 0);
+  badge.style.display = total ? 'inline-flex' : 'none';
+  badge.textContent = total;
+  btn.title = total
+    ? '本次部署发现 ' + err + ' 个错误、' + warn + ' 个提示，点击查看'
+    : (hasSummary ? '本次部署未发现问题，可查看总结' : '本次部署没有发现问题');
+}
+
+function ldSumItem(i){
+  return `<div class="sum-item ${i.level}">
+    <div class="hd"><span class="lv ${i.level}">${i.level === 'error' ? '错误' : '提示'}</span>
+      <span>${escapeHtml(i.stage || '')} · ${escapeHtml(i.title || '')}</span>
+      <span class="tm">${escapeHtml(i.time || '')}</span></div>
+    ${i.detail ? `<div class="dt">${escapeHtml(i.detail)}</div>` : ''}
+    ${i.suggestion ? `<div class="sg">建议：${escapeHtml(i.suggestion)}</div>` : ''}
+  </div>`;
+}
+
+async function ldOpenSummary(){
+  let r;
+  try { r = await api('/api/localdeploy/summary'); }
+  catch (e){ toast('读取总结失败：' + e.message, 'err'); return; }
+  if (!r.ok || !r.summary){ toast('还没有可用的部署总结', 'warn'); return; }
+
+  ldState.summaryMarkdown = r.markdown || '';
+  const s = r.summary;
+  const c = s.context || {};
+  const v = dpEl('sumVerdict');
+  v.style.display = 'inline-block';
+  v.className = 'sum-verdict ' + (s.success ? 'ok' : 'bad');
+  v.textContent = s.success ? (s.counts.warn ? '成功 · ' + s.counts.warn + ' 个提示' : '成功') : '失败';
+
+  const kv = [
+    ['时间', s.time],
+    ['结果', s.success ? '✅ 成功' : '❌ 失败（' + (s.stage || '-') + '）'],
+    ['项目', (c.repo || c.input || '-') + (c.branch ? '（分支 ' + c.branch + '）' : '')],
+    ['目标路径', c.target || '-'],
+    ['类型', (c.type || '-') + (c.mode ? ' ｜ 策略 ' + c.mode : '')],
+    ['部署判定', c.deployVerdict ? (c.deployVerdict.label + ' — ' + c.deployVerdict.reason) : '-'],
+    ['耗时', (c.cost || 0) + ' 秒'],
+  ];
+
+  const envLines = Object.entries(s.env || {}).filter(([k, val]) => val).map(([k, val]) => k + '：' + val);
+  if (s.disk) envLines.push('目标盘剩余：' + s.disk);
+
+  dpEl('sumBody').innerHTML = `
+    <div class="sum-sec">
+      <div class="sum-kv">${kv.map(([k, val]) => `<b>${escapeHtml(k)}</b><span>${escapeHtml(String(val))}</span>`).join('')}</div>
+    </div>
+
+    ${!s.success ? `<div class="sum-sec"><h4>❌ 失败原因</h4>
+      <div class="sum-cause">
+        <div><b>根因判定：</b>${escapeHtml(s.cause || '未归类错误')}</div>
+        ${s.error ? `<div class="err">${escapeHtml(s.error)}</div>` : ''}
+      </div></div>` : ''}
+
+    ${(s.suggestions || []).length ? `<div class="sum-sec"><h4>🛠 处理建议</h4>
+      <ol style="margin:0;padding-left:20px;font-size:12.8px;color:var(--muted);line-height:1.9">
+        ${s.suggestions.map(x => `<li>${escapeHtml(x)}</li>`).join('')}
+      </ol></div>` : ''}
+
+    <div class="sum-sec"><h4>📋 问题清单（${s.issues.length} 条：错误 ${s.counts.error} · 提示 ${s.counts.warn}）</h4>
+      ${s.issues.length ? `<div class="sum-list">${s.issues.map(ldSumItem).join('')}</div>`
+        : '<div style="font-size:12.5px;color:var(--dim)">本次部署没有出现错误或警告。</div>'}
+    </div>
+
+    ${(s.actions || []).length ? `<div class="sum-sec"><h4>✅ 已自动处理</h4>
+      <div class="sum-acts">${s.actions.map(a => `<div>${escapeHtml(a.time + ' ' + a.text)}</div>`).join('')}</div></div>` : ''}
+
+    ${envLines.length ? `<div class="sum-sec"><h4>🖥 环境信息</h4>
+      <div class="sum-kv">${envLines.map(l => { const i = l.indexOf('：'); return `<b>${escapeHtml(l.slice(0, i))}</b><span>${escapeHtml(l.slice(i + 1))}</span>`; }).join('')}</div>
+    </div>` : ''}
+
+    ${(s.logsTail || []).length ? `<div class="sum-sec"><h4>📜 关键日志（末尾 ${s.logsTail.length} 条）</h4>
+      <div class="sum-logs">${escapeHtml(s.logsTail.join('\n'))}</div></div>` : ''}
+  `;
+  dpEl('ovSummary').classList.add('show');
+}
+
+async function ldCopySummary(){
+  const md = ldState.summaryMarkdown || '';
+  if (!md){ toast('暂无可复制内容', 'warn'); return; }
+  try { await navigator.clipboard.writeText(md); toast('✔ 总结已复制到剪贴板'); }
+  catch (e) { toast('复制失败，请手动选择文本', 'err'); }
+}
+
+async function ldSaveSummary(){
+  const p = (ldState.lastResult && ldState.lastResult.target) || dpEl('ldTarget').value.trim();
+  const r = await api('/api/localdeploy/summary/save', { method:'POST', body: JSON.stringify({ path: p }) });
+  if (r.ok){ toast('✔ 已保存：' + r.file); log('ok', '📋 问题总结已保存：' + r.file); }
+  else toast(r.error || '保存失败', 'err');
+}
+
+/** 部署记录 */
+async function ldOpenHistory(){  const r = await api('/api/localdeploy/history');
+  const list = (r.history || []);
+  const html = !list.length ? '<div style="padding:14px;color:var(--dim);font-size:12.5px">还没有部署记录</div>'
+    : '<div class="ld-hist">' + list.map(h => `
+        <div class="it">
+          <span class="st ${h.status === 'success' ? 'ok' : 'bad'}">${h.status === 'success' ? '✔ 成功' : '✘ 失败'}</span>
+          <span class="p" title="${escapeHtml(h.target || '')}">${escapeHtml(h.target || '')}</span>
+          <span style="margin-left:auto;color:var(--dim);font-size:11px">${escapeHtml(h.time || '')}</span>
+        </div>`).join('') + '</div>';
+  dpEl('ldResult').innerHTML = `<div style="font-weight:600;margin-bottom:6px">🕘 最近部署记录（${list.length}）</div>` + html;
+  dpShow('ldResult', true);
+}
+
+/* ---------- 收藏 / 历史弹窗 ---------- */
+function openLatest(){
+  const latest = (appState.reports||[])[0];
+  if(!latest || !latest.html){ toast(t('noReport'),'warn'); return; }
+  api('/api/open-report',{method:'POST',body:JSON.stringify({file:latest.html})});
+  log('ok','📖 ' + t('hisOpenTT') + '：' + latest.html);
+}
+function openFav(){
+  document.getElementById('ovFav').classList.add('show');
+  renderFavs(); renderCompare();
+}
+function openHistory(){
+  document.getElementById('ovHistory').classList.add('show');
+  renderHistory(); refreshHistory();
+}
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('mousedown',e=>{if(e.target===o)o.classList.remove('show');}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.overlay.show').forEach(o=>o.classList.remove('show'));});
+
+/* ---------- 状态条 ---------- */
+function updateLatestChip(){
+  const el = document.getElementById('osLatest');
+  if(!el) return;
+  const r = (appState.reports || [])[0];
+  if(!r){ el.textContent = '—'; el.title = '还没有报告'; return; }
+  el.textContent = r.name.replace(/^GitHub热门分析报告_/, '');
+  el.title = `${r.name}\n${r.time}`;
+}
+function updateChips(){
+  const cfg = appState.config || {};
+  const engineTxt = { auto:'auto', ai:'AI 优先', builtin:'builtin' }[cfg.engine || 'auto'] || 'auto';
+  document.getElementById('stEngine').textContent = engineTxt;
+  document.getElementById('stProxy').textContent = cfg.proxy || t('stNoProxy');
+  const _osEngine = document.getElementById('osEngine'); if (_osEngine) _osEngine.textContent = { auto:t('stAuto'), ai:'AI 深度分析', builtin:'仅内置规则引擎' }[cfg.engine || 'auto'];
+  updateLatestChip();
+}
+function renderAll(){
+  setPeriod(period, true);
+  renderFavs();
+  renderHistory();
+  updateChips();
+}
+
+/* ---------- 启动 ---------- */
+/** 本地服务未连接时的顶部提示条（避免按钮点了“像没反应”） */
+function showOfflineBanner(){
+  if (document.getElementById('offlineBar')) return;
+  const bar = document.createElement('div');
+  bar.id = 'offlineBar';
+  bar.style.cssText = 'position:sticky;top:0;z-index:9999;display:flex;gap:10px;align-items:center;flex-wrap:wrap;' +
+    'padding:10px 16px;margin:0 0 14px;border-radius:12px;font-size:13px;line-height:1.7;' +
+    'background:#fff4e5;border:1px solid #f0c48a;color:#8a4b00';
+  const isFile = location.protocol === 'file:';
+  bar.innerHTML = isFile
+    ? `⚠ <b>当前是直接打开文件（file://），没有本地服务</b>：抓取、报告目录、一键部署都无法使用。
+       请双击 <code>启动.bat</code>（或运行 <code>node server.js</code>），再访问
+       <a href="http://127.0.0.1:5215" style="color:#8a4b00;text-decoration:underline">http://127.0.0.1:5215</a>`
+    : `⚠ <b>本地服务未连接</b>：请确认已通过「启动.bat」启动，再访问 <a href="http://127.0.0.1:5215" style="color:#8a4b00;text-decoration:underline">http://127.0.0.1:5215</a>`;
+  document.body.insertBefore(bar, document.body.firstChild);
+}
+
+(async function init(){
+  applyLang();
+  const tc = document.getElementById('toolsCount');
+  if(tc) tc.textContent = document.querySelectorAll('#toolsGrid .btn').length;
+  try{ if(localStorage.getItem('toolsFold') === '1') toggleToolsFold(true); }catch(e){}
+  initWallpaper();
+  log('sys','🔥 ' + t('welcome'));
+  log('info', t('tipAcc'));
+  log('info', t('tipCache'));
+
+  let st = null;
+  try { st = await api('/api/state'); } catch (e) { st = null; }
+  if(!st || st.error){
+    appState.offline = true;
+    log('err','❌ 无法连接本地服务，请确认已通过「启动.bat」或 node server.js 启动');
+    showOfflineBanner();
+    return;
+  }
+  appState.config = st.config || {};
+  appState.favorites = (st.config && st.config.favorites) || [];
+  appState.schedule = (st.config && st.config.schedule) || null;
+  appState.reports = st.reports || [];
+  appState.dir = st.dir || '';
+  if(appState.dir) document.getElementById('aboutDir').textContent = appState.dir;
+
+  period = ['daily','weekly','monthly'].includes(appState.config.since) ? appState.config.since : 'monthly';
+  if(appState.config.since && !['daily','weekly','monthly'].includes(appState.config.since)) appState.config.since = period;
+  renderAll();
+
+  if(st.last && st.last.items && st.last.items.length){
+    log('ok','📖 最近一次报告：' + (st.last.meta.date||'') + ' · ' + (st.last.meta.source||'') + '（打开「📂 报告目录」查看）');
+  }
+  log('info','📁 报告目录：' + appState.dir + '\\reports');
+  log('info','💡 提示：数据抓取全程零 API；不填 Key 也能出完整报告（内置规则引擎）');
+})();
+</script>
+
+
+</body></html>

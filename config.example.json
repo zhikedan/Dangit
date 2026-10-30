@@ -1,0 +1,25 @@
+{
+  "proxy": "",
+  "since": "monthly",
+  "engine": "auto",
+  "api_base": "https://api.deepseek.com",
+  "api_key": "",
+  "api_model": "deepseek-chat",
+  "top_n": 10,
+  "source_mode": "auto",
+  "lang": "zh",
+  "favorites": [],
+  "schedule": null,
+  "autostart": false,
+  "coolify": {
+    "base_url": "http://localhost:8000",
+    "api_token": "",
+    "last_target": ""
+  },
+  "ai_deploy": {
+    "cli": "",
+    "dsh_home": "",
+    "api_key": "",
+    "permission_mode": "danger-full-access"
+  }
+}

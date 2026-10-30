@@ -1,0 +1,149 @@
+{
+  "_说明": "项目分类知识库：规则引擎按关键词识别项目类别，套用对应的中文分析模板。二次开发：可增删类别、补充关键词与模板文案。",
+  "_优先级": ["ai_agent", "ai_agent_skill", "llm_infra", "ai_code_review", "content_writing", "audio_media", "data_tool", "visualization", "security", "devtool_cli", "education", "system_os", "other"],
+  "categories": {
+    "ai_agent": {
+      "name_cn": "AI 编程代理 / 智能体",
+      "keywords": ["agent", "agents", "agentic", "coding agent", "code agent", "claude code", "codex", "cursor", "copilot", "autonomous", "computer use", "mcp server", "ai assistant", "llm agent"],
+      "pain": "通用编程助手缺少自主执行长任务的能力：上下文容易丢失、步骤不可控、工具调用不透明，复杂任务仍需人工一步步盯着",
+      "purpose": "把大模型能力包装成能自主规划、调用工具、端到端完成任务的编程代理",
+      "audience": "希望用 AI 代理接手重复编码、调研与排障任务的开发者与团队",
+      "functions": ["用自然语言下达任务，代理自主拆解并执行多步操作", "读写代码库、运行命令、调用外部工具", "保留会话上下文，支持长任务连续执行", "可配置技能/规则/模型，接入不同宿主或终端"],
+      "tech": ["大语言模型 + 工具调用（function calling / MCP）", "TypeScript/Python/Go/Rust 运行时与 CLI/TUI 界面", "沙箱执行与上下文管理"],
+      "scenes": ["让代理完成从需求到代码的小型闭环任务", "批量重构、迁移、测试补全等重复性工程", "本地私有化运行，代码不出机器"],
+      "hot": "AI 编码代理是 2026 年增长最猛的开源品类：模型能力提升叠加端到端自动化，让开发者第一次真正把「写代码」交给 AI，社区关注度与话题度都极高。"
+    },
+    "ai_agent_skill": {
+      "name_cn": "AI 智能体技能/规则",
+      "keywords": ["skill", "skills", "rules", "ruleset", "prompt", "prompts", "methodology", "instructions", "agent skill", "workflow rules"],
+      "pain": "通用大模型和编程代理缺少针对具体工作流的行为规范，直接使用时容易答非所问、过度发挥、产出不可控",
+      "purpose": "把经过验证的智能体工作方法论封装成即插即用的技能/规则，让编程代理的行为可控、产出稳定",
+      "audience": "使用 Claude Code、Cursor、Codex 等 AI 编程工具的开发者与团队",
+      "functions": ["以技能/规则文件形态安装进主流智能体宿主，即装即用", "约束代理的工作流程（如先提问再动手、先规划再实现）", "统一团队 AI 助手的行为规范与输出结构", "纯文本资产，可自由裁剪、组合、二次分发"],
+      "tech": ["Markdown/纯文本规则与提示词工程", "主流智能体宿主的 skill/plugin 加载机制", "无独立运行时，零依赖"],
+      "scenes": ["日常 AI 编程时让代理守规矩、少跑偏", "团队统一智能体使用规范", "学习提示词工程与技能编写的范例", "把个人经验沉淀为可复用技能资产"],
+      "hot": "“给代理装方法论”的 skills 品类是近期 GitHub 上增长最快的开源方向之一，轻量、零门槛、即装即用的特点使其极易病毒式传播。"
+    },
+    "llm_infra": {
+      "name_cn": "大模型基础设施/推理引擎",
+      "keywords": ["llm", "inference", "model", "models", "moe", "gpu", "vram", "transformer", "harness", "runtime", "quantization", "gguf", "ollama", "deepseek", "gpt", "embedding", "fine-tune", "serving"],
+      "pain": "大模型运行门槛高：前沿规模模型依赖昂贵 GPU 与云端服务，本地部署、评测与接入生产系统的工程复杂度大",
+      "purpose": "降低大模型的运行与工程化门槛，让前沿模型能力走进消费级硬件或标准化接入生产系统",
+      "audience": "AI 开发者、研究者、需要私有化部署模型的团队与隐私敏感用户",
+      "functions": ["大模型本地推理/运行（低资源占用）", "模型评测、压测与可观测性", "插件化/模块化架构便于扩展替换", "兼容主流模型格式与生态工具"],
+      "tech": ["高性能系统语言（C/C++/Rust/Go）或 TypeScript/Python 运行时", "内存分层调度/量化/流式加载等推理优化技术", "OpenAI 兼容接口或插件协议"],
+      "scenes": ["个人本地跑大模型不依赖云端", "企业私有化部署 AI 能力", "研究与对比不同模型/推理方案", "为上层应用提供稳定模型底座"],
+      "hot": "“本地优先 + 消费级硬件跑大模型”与“智能体基础设施开源化”是当下最受关注的硬核主题，此类项目往往伴随媒体专题报道而爆火。"
+    },
+    "ai_code_review": {
+      "name_cn": "AI 代码审查/质量工具",
+      "keywords": ["code review", "review", "lint", "linter", "static analysis", "code quality", "refactor", "bug detection", "code analysis"],
+      "pain": "纯人工代码评审成本高、易漏检；纯 LLM 审查不稳定、慢且难以融入既有 CI 流程",
+      "purpose": "用 AI 提升代码审查的精准度与速度，并让审查过程可复现、可集成进工程流水线",
+      "audience": "有 CI/CD 流程的工程团队、开源项目维护者、企业研发部门",
+      "functions": ["自动审查 PR/MR 代码变更", "识别潜在缺陷、坏味道与安全隐患", "输出结构化审查报告便于集成 CI", "大仓库分治并发审查"],
+      "tech": ["LLM 代理 + 确定性流水线混合架构", "Go/TypeScript 等高性能语言", "CI/CD 集成接口（GitHub Actions 等）"],
+      "scenes": ["企业合并请求自动前置审查", "开源项目分担维护者评审压力", "团队编码质量门禁", "代码安全与规范体检"],
+      "hot": "AI 编码产出量暴增之后，“AI 审查 AI”成为刚需环节，大厂开源其生产级审查能力更带来稀缺性与信任背书。"
+    },
+    "content_writing": {
+      "name_cn": "内容创作/文本编辑",
+      "keywords": ["writing", "writer", "text", "draft", "humanizer", "editorial", "editing", "blog", "copywriting", "tone", "style", "proofread", "translate", "translation", "markdown"],
+      "pain": "AI 辅助写作普及后，产出内容充满重复、浮夸、公式化的“AI 腔”，同质化严重且易被读者排斥",
+      "purpose": "提升 AI 辅助内容的人性化程度与可读性，让文字更像真人所写",
+      "audience": "内容创作者、博主、文案、编辑，以及所有用 AI 起草长文的人",
+      "functions": ["识别并标记套路化 AI 表达", "给出具体改写建议", "统一文风与语气", "发布前终稿质量检查"],
+      "tech": ["Python/TypeScript 文本处理流水线", "规则 + 提示词混合检测", "agent skill 或独立 CLI 形态"],
+      "scenes": ["公众号/博客/营销文案发布前去 AI 味", "英文草稿消除翻译腔", "团队批量处理 AI 初稿", "求职文书等对“真人感”要求高的文本"],
+      "hot": "读者对 AI 内容的审美疲劳集中爆发，“去 AI 味”类工具直击所有创作者的日常痛点，天然具备话题传播性。"
+    },
+    "audio_media": {
+      "name_cn": "音视频/语音媒体",
+      "keywords": ["voice", "tts", "speech", "audio", "music", "video", "recorder", "recording", "dubbing", "transcribe", "transcription", "screen", "camera", "subtitle", "player"],
+      "pain": "商业音视频与语音服务昂贵、闭源且有隐私顾虑，本地方案又普遍门槛高",
+      "purpose": "提供开源免费的音视频/语音处理与生成能力，本地运行、数据不出机器",
+      "audience": "内容创作者、开发者、播客/视频作者与隐私敏感用户",
+      "functions": ["语音合成/克隆/配音", "录音录屏与自动美化", "转录与字幕生成", "本地化处理保护隐私"],
+      "tech": ["Python/C++ 音频视频处理栈", "开源模型（TTS/ASR 等）本地推理", "FFmpeg 等媒体工具链集成"],
+      "scenes": ["制作视频配音与字幕", "录制产品演示 Demo", "会议/播客转录整理", "本地语音助手开发"],
+      "hot": "本地优先的多模态创作工具把昂贵商业服务“平替”化，是开源社区近期最活跃的品类之一。"
+    },
+    "data_tool": {
+      "name_cn": "数据处理/文档工具",
+      "keywords": ["ocr", "pdf", "excel", "csv", "parser", "export", "exporter", "extract", "scrape", "crawler", "database", "sqlite", "data", "migration", "converter", "chat history"],
+      "pain": "个人与团队的数据散落在封闭生态和各种文档格式中，解析、迁移、检索成本高",
+      "purpose": "把数据从封闭格式与平台中解放出来，实现本地化解析、导出与再利用",
+      "audience": "需要处理文档/数据的开发者、研究者与普通用户",
+      "functions": ["文档解析与格式转换", "数据导出/迁移回本地", "内容识别与结构化提取", "本地检索与知识库构建"],
+      "tech": ["Python/Rust 数据处理栈", "OCR/PDF 解析库", "嵌入式存储（SQLite 等）"],
+      "scenes": ["批量处理 PDF/表格文档", "聊天记录/个人数据导出备份", "为 AI 准备结构化语料", "老旧数据迁移现代化"],
+      "hot": "“数据回归用户自己手里”的本地优先理念持续升温，此类实用工具安装即用、受众极广。"
+    },
+    "visualization": {
+      "name_cn": "可视化/图形交互",
+      "keywords": ["3d", "globe", "earth", "map", "chart", "charts", "visualization", "visual", "dashboard", "canvas", "diagram", "render", "webgl", "tracking", "satellite"],
+      "pain": "实时数据与空间信息缺乏零门槛的直观呈现方式，专业可视化工具学习成本高",
+      "purpose": "把复杂数据变成浏览器里开箱即用、可交互的直观视觉体验",
+      "audience": "数据爱好者、教育者、前端开发者与所有想“一眼看懂”信息的用户",
+      "functions": ["可交互 3D/2D 图形渲染", "聚合实时公共数据叠加展示", "浏览器打开即用无需安装", "可嵌入网页二次开发"],
+      "tech": ["JavaScript + WebGL/Three.js 类渲染", "公共实时数据 API 聚合", "纯前端静态部署"],
+      "scenes": ["实时追踪全球动态（航班/船舶/事件）", "课堂教学与演示", "大屏展示与氛围素材", "前端可视化学习范本"],
+      "hot": "“实时 + 地球 + 上帝视角”类可视化自带极强观赏性与传播属性，是典型的病毒式开源项目品类。"
+    },
+    "security": {
+      "name_cn": "安全/隐私保护",
+      "keywords": ["security", "secure", "audit", "vulnerability", "cve", "pentest", "privacy", "private", "encrypt", "encryption", "password", "anonymity", "firewall"],
+      "pain": "安全审计依赖昂贵商业产品与专家经验，普通开发者和中小团队缺乏可负担的防护手段",
+      "purpose": "把安全能力开源化、自动化，让普通开发者也能低成本获得专家级防护",
+      "audience": "开发者、运维、安全工程师与隐私敏感用户",
+      "functions": ["自动化安全审计与扫描", "漏洞发现与修复建议", "隐私保护与数据加密", "合规检查"],
+      "tech": ["多语言安全工具链", "自动化扫描引擎", "可选 AI 辅助分析"],
+      "scenes": ["代码上线前安全体检", "依赖库漏洞排查", "个人隐私数据保护", "企业合规审计"],
+      "hot": "AI 生成代码激增放大了安全隐患，安全审计类工具顺势成为热门刚需。"
+    },
+    "devtool_cli": {
+      "name_cn": "开发者工具/效率 CLI",
+      "keywords": ["cli", "terminal", "devtool", "deploy", "deployment", "git", "worktree", "ide", "editor", "productivity", "workflow", "automate", "automation", "orchestrate", "parallel", "container", "build"],
+      "pain": "开发者日常在多个工具、终端窗口与重复流程之间疲于奔命，效率被碎片化侵蚀",
+      "purpose": "用一条命令/一个界面整合开发工作流，把重复劳动自动化",
+      "audience": "全体软件开发者，尤其是重度终端用户与追求效率的个人开发者",
+      "functions": ["一条命令完成任务（部署/构建/审查等）", "统一管理多个工具/代理/终端", "自动化重复开发流程", "可视化状态与用量追踪"],
+      "tech": ["Go/Rust/TypeScript 高性能实现", "CLI + 桌面/移动端多形态", "与主流开发工具链集成"],
+      "scenes": ["日常开发与部署提速", "多任务/多代理并行管理", "团队工程规范落地", "移动端跟进长任务进度"],
+      "hot": "开发者效率工具永远有稳定受众，与 AI 代理工作流结合后热度进一步放大。"
+    },
+    "education": {
+      "name_cn": "教育/学习资源",
+      "keywords": ["course", "tutorial", "learn", "learning", "book", "education", "interview", "awesome", "roadmap", "guide", "lectures", "study"],
+      "pain": "优质学习资料分散、良莠不齐，系统化的免费学习路径稀缺",
+      "purpose": "把高质量知识免费、系统地开放给所有学习者",
+      "audience": "学生、转行者与希望持续学习的开发者",
+      "functions": ["系统化课程/书单/路线图", "面试与求职准备资料", "可实践的代码示例", "社区共建持续更新"],
+      "tech": ["Markdown 文档为主", "配套代码示例与练习", "免费在线阅读部署"],
+      "scenes": ["入门新领域的系统学习", "面试突击准备", "教学与培训素材", "收藏查阅的速查手册"],
+      "hot": "免费高质量学习资源历来是 GitHub 星数天花板品类，AI 浪潮下的技能焦虑进一步推高热度。"
+    },
+    "system_os": {
+      "name_cn": "系统/操作系统",
+      "keywords": ["linux", "operating system", "os", "kernel", "shell", "distro", "terminal emulator", "window manager", "driver", "firmware"],
+      "pain": "主流操作系统封闭臃肿，缺少美观、现代、可定制的开源替代",
+      "purpose": "提供更美观、现代、有主张的系统级开源替代方案",
+      "audience": "Linux 爱好者、极客与系统开发者",
+      "functions": ["开箱即用的现代桌面体验", "高度可定制的窗口/终端管理", "性能优化与轻量占用"],
+      "tech": ["C/Rust 系统语言", "Shell 脚本配置", "主流 Linux 生态组件"],
+      "scenes": ["日常桌面系统替换", "极客定制工作环境", "系统开发与内核学习"],
+      "hot": "系统级项目自带极客光环，一次登榜往往带来长尾稳定关注。"
+    },
+    "other": {
+      "name_cn": "综合工具",
+      "keywords": [],
+      "pain": "现有方案在安装成本、使用门槛或开放性上存在不足",
+      "purpose": "提供一个更简单、开放、好用的替代方案",
+      "audience": "开发者与对该领域感兴趣的普通用户",
+      "functions": ["围绕项目主题的核心功能（详见 README）", "开箱即用的安装与使用体验", "开源开放，可自由二次开发"],
+      "tech": ["以榜单标注语言为主的技术栈", "参见项目 README 的依赖说明"],
+      "scenes": ["对应领域的日常工作流提效", "学习与二次开发的参考实现"],
+      "hot": "凭借独特定位与实用性在近期开源社区快速获得关注。"
+    }
+  }
+}

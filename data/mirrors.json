@@ -1,0 +1,109 @@
+{
+  "_说明": "网络源与链接配置（v2.10.0 零 API）。二次开发：可增删镜像源（trending_sources 并发自动尝试：独立镜像站在前、加速器在后；数据来源=国内直达 时优先走独立镜像站组）、调整 README 抓取通道（readme_channels 按顺序自动尝试）、修改报告内链接模板（link_templates：GitHub 原地址 / Gitee 备用 / 加速镜像 / github.store 镜像）。在线源全部失败时程序会自动启用「离线缓存」兜底（支持跨周期共享：本周期无缓存时自动用最近一周/月缓存），缓存文件为 data/trending_cache_*.html。镜像站均为社区公益服务，随时可能失效，请以实际连通为准。",
+  "firecrawl": {
+    "_说明": "开源抓取引擎 Firecrawl（自托管服务，默认端口 3002）。本程序优先用 Firecrawl 抓取 Trending，服务不可用时自动回落下方多源抓取链。enabled=false 可关闭；base_url 可填本机/局域网/云端的 Firecrawl 服务地址；api_path 按服务版本填 /v1/scrape 或 /v2/scrape。安装方法见《使用说明.md》「Firecrawl 抓取通道」。",
+    "enabled": true,
+    "base_url": "http://localhost:3002",
+    "api_path": "/v1/scrape",
+    "timeout": 25
+  },
+  "trending_sources": [
+    {
+      "name": "GitHub 官方 Trending（官网直连）",
+      "url": "https://github.com/trending?since={since}"
+    },
+    {
+      "name": "bgithub.xyz 镜像",
+      "url": "https://bgithub.xyz/trending?since={since}"
+    },
+    {
+      "name": "github.ur1.fun 镜像",
+      "url": "https://github.ur1.fun/trending?since={since}"
+    },
+    {
+      "name": "bdnb.cn GitHub 中文版",
+      "url": "https://bdnb.cn/trending?since={since}"
+    },
+    {
+      "name": "gitclone.com 镜像",
+      "url": "https://gitclone.com/github.com/trending?since={since}"
+    },
+    {
+      "name": "dgithub.xyz 镜像",
+      "url": "https://dgithub.xyz/trending?since={since}"
+    },
+    {
+      "name": "kkgithub.com 镜像",
+      "url": "https://kkgithub.com/trending?since={since}"
+    },
+    {
+      "name": "github.store 镜像（备用）",
+      "url": "https://github.store/trending?since={since}"
+    },
+    {
+      "name": "mirror.ghproxy.com 加速",
+      "url": "https://mirror.ghproxy.com/https://github.com/trending?since={since}"
+    },
+    {
+      "name": "ghproxy.net 加速",
+      "url": "https://ghproxy.net/https://github.com/trending?since={since}"
+    },
+    {
+      "name": "gh.llkk.cc 加速",
+      "url": "https://gh.llkk.cc/https://github.com/trending?since={since}"
+    },
+    {
+      "name": "ghp.ci 加速",
+      "url": "https://ghp.ci/https://github.com/trending?since={since}"
+    },
+    {
+      "name": "moeyy.cn 加速",
+      "url": "https://moeyy.cn/gh-proxy/https://github.com/trending?since={since}"
+    },
+    {
+      "name": "r.jina.ai 网页代理",
+      "url": "https://r.jina.ai/https://github.com/trending?since={since}"
+    }
+  ],
+  "readme_channels": [
+    {
+      "name": "raw.githubusercontent 直连",
+      "url": "https://raw.githubusercontent.com/{full_name}/{branch}/README.md"
+    },
+    {
+      "name": "ghproxy 加速 raw",
+      "url": "https://ghproxy.net/https://raw.githubusercontent.com/{full_name}/{branch}/README.md"
+    },
+    {
+      "name": "jsDelivr CDN",
+      "url": "https://cdn.jsdelivr.net/gh/{full_name}@{branch}/README.md"
+    },
+    {
+      "name": "gitee 镜像备用",
+      "url": "https://gitee.com/mirrors/{repo}/raw/{branch}/README.md"
+    },
+    {
+      "name": "kkgithub raw",
+      "url": "https://kkgithub.com/{full_name}/raw/{branch}/README.md",
+      "no_verify": true
+    },
+    {
+      "name": "ghfast raw",
+      "url": "https://ghfast.top/https://raw.githubusercontent.com/{full_name}/{branch}/README.md"
+    },
+    {
+      "name": "r.jina.ai raw",
+      "url": "https://r.jina.ai/https://raw.githubusercontent.com/{full_name}/{branch}/README.md"
+    }
+  ],
+  "branches": [
+    "main",
+    "master"
+  ],
+  "link_templates": {
+    "github": "https://github.com/{full_name}",
+    "gitee": "https://gitee.com/mirrors/{repo}",
+    "mirror": "https://kkgithub.com/{full_name}",
+    "store": "https://github.store/{full_name}"
+  }
+}

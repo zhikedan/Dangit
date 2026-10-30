@@ -1,0 +1,48 @@
+# 运行时产物
+reports/*
+!reports/.gitkeep
+
+data/last_report.json
+data/repo_cache.json
+data/trending_cache_*.html
+data/trending_extra_*.json
+data/deploy_history.json
+data/ai_deploy/
+data/deploy_issues/
+
+# 用户配置（含本机 API Key / Coolify Token）
+config.json
+!config.example.json
+
+# 壁纸素材（体积大，按需自行放入）
+壁纸/*
+!壁纸/.gitkeep
+
+# 下载工具的产物
+xxt/downloads/
+xxt/tmp/
+
+# 依赖与缓存
+node_modules/
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# 打包产物
+build/
+dist/
+*.spec.bak
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+*.tmp
+*.bak
+*.bak-*
+~$*

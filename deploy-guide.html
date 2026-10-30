@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>一键部署 · 使用说明</title>
+<style>
+  :root{--bg:#f4f7fc;--panel:#fff;--text:#22314e;--muted:#5d6c86;--dim:#8b97ab;--blue:#2f6fd6;--green:#159957;--red:#e5484d;--border:rgba(108,138,188,.22)}
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 10% -10%,#e6efff 0,transparent 60%),radial-gradient(900px 500px at 100% 0,#e8f7ee 0,transparent 55%),var(--bg);
+    color:var(--text);font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;line-height:1.85;padding:34px 20px 70px}
+  .wrap{max-width:920px;margin:0 auto}
+  header{display:flex;align-items:center;gap:14px;margin-bottom:22px}
+  .logo{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;font-size:22px;background:linear-gradient(135deg,#2f6fd6,#159957);color:#fff;box-shadow:0 8px 22px rgba(47,111,214,.28)}
+  h1{font-size:22px;margin:0}
+  header .sub{color:var(--dim);font-size:12px;font-family:ui-monospace,Consolas,monospace;letter-spacing:.6px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:22px 24px;margin-bottom:16px;box-shadow:0 10px 28px rgba(38,60,105,.06)}
+  .card h2{font-size:16px;margin:0 0 10px;display:flex;align-items:center;gap:9px}
+  .card h2 .n{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;font-size:12px;background:rgba(47,111,214,.1);color:var(--blue);font-family:ui-monospace,monospace}
+  h3{font-size:14px;margin:18px 0 6px}
+  p,li{font-size:13.5px;color:var(--muted)}
+  code{background:rgba(47,111,214,.07);color:var(--blue);padding:2px 7px;border-radius:6px;font-size:12.5px;font-family:ui-monospace,Consolas,monospace}
+  pre{background:#0f1a2b;color:#bfe3cd;border-radius:11px;padding:13px 15px;overflow:auto;font-size:12.5px;font-family:ui-monospace,Consolas,monospace;line-height:1.7}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:10px 0}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{color:var(--dim);font-weight:600;font-size:12px}
+  .tip{display:flex;gap:10px;background:rgba(47,111,214,.05);border:1px solid rgba(47,111,214,.18);border-radius:11px;padding:11px 14px;font-size:12.5px;color:#3f5a86;margin:12px 0}
+  .warn{background:rgba(227,179,65,.08);border-color:rgba(227,179,65,.3);color:#7a5b13}
+  .ok{background:rgba(21,153,87,.06);border-color:rgba(21,153,87,.25);color:#1c6b45}
+  .bad{background:rgba(229,72,77,.06);border-color:rgba(229,72,77,.25);color:#9c2b2e}
+  footer{text-align:center;color:var(--dim);font-size:12px;margin-top:26px;font-family:ui-monospace,monospace}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">🚀</div>
+    <div>
+      <h1>一键部署 · 使用说明</h1>
+      <div class="sub">LOCAL PATH DEPLOY · AUTO BUILD</div>
+    </div>
+  </header>
+
+  <div class="card">
+    <h2>📌 它做了什么</h2>
+    <p>你只需要给两样东西：<b>项目名称/仓库网址</b> 和 <b>本地目标路径</b>。其余全部自动：</p>
+<pre><code>解析项目 → 校验路径 → 环境检测 → 获取源码 → 安装依赖 → 构建
+        → 产物落位（自动备份） → 完整性校验 → 生成启动脚本 → 输出结果</code></pre>
+    <div class="tip ok">✅ 全程在系统临时目录里构建，只有全部成功才写入目标路径；中途失败不会破坏你已有的文件。</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">1</span>输入怎么填</h2>
+    <table>
+      <tr><th>类型</th><th>示例</th><th>说明</th></tr>
+      <tr><td>owner/repo</td><td><code>mdn/beginner-html-site</code></td><td>最直接，GitHub / Gitee 都支持</td></tr>
+      <tr><td>完整网址</td><td><code>https://github.com/vercel/next-learn</code><br><code>https://gitee.com/mirrors/ponytail</code></td><td>带不带 <code>.git</code> 都行</td></tr>
+      <tr><td>SSH 地址</td><td><code>git@github.com:owner/repo.git</code></td><td>自动转成 HTTPS</td></tr>
+      <tr><td>只写项目名</td><td><code>next-learn</code></td><td>自动在 GitHub 按星标搜索，弹出候选让你点选</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">2</span>目标路径的规则</h2>
+    <table>
+      <tr><th>情况</th><th>处理</th></tr>
+      <tr><td><code>E:\pc\桌面\github\xxt\githubxiangmu\githubbushu</code></td><td>✅ 视为<b>父目录</b>：自动在其中新建以项目名命名的文件夹（这里是 <code>…\githubbushu\HivisionIDPhotos</code>），互不干扰</td></tr>
+      <tr><td><code>E:/pc/桌面/github</code>（斜杠写法）</td><td>✅ 两种分隔符等价，自动归一化</td></tr>
+      <tr><td>父目录不存在</td><td>✅ 自动逐级创建</td></tr>
+      <tr><td>项目子目录已存在且非空</td><td>先改名备份为 <code>xxx.bak-时间戳</code> 再写入；也可选「直接写入目标地址」或「合并覆盖」</td></tr>
+      <tr><td>目录被占用（资源管理器 / 编辑器 / 杀软）</td><td>自动重试 3 次；仍失败则<b>改为就地合并覆盖</b>（不删除已有文件），不会再直接报错中断</td></tr>
+      <tr><td><code>xxt\abc</code>（相对路径）</td><td>❌ 明确拒绝：必须是带盘符的绝对路径</td></tr>
+      <tr><td><code>C:\Windows\...</code>、盘符根目录、<code>Program Files</code></td><td>❌ 明确拒绝：系统目录不允许</td></tr>
+      <tr><td>本程序自身目录</td><td>❌ 明确拒绝：避免覆盖程序文件</td></tr>
+      <tr><td>盘符不存在 / 无写权限</td><td>❌ 立即提示具体原因，不会开始下载</td></tr>
+    </table>
+    <div class="tip">💡 不确定路径？点输入框右侧 <b>📁 浏览</b>，用系统文件夹选择框挑一个父目录即可。</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">3</span>自动处理了哪些常见异常</h2>
+    <table>
+      <tr><th>异常</th><th>自动处理</th></tr>
+      <tr><td>没有安装 Git</td><td>直接改用 ZIP 下载源码</td></tr>
+      <tr><td>Git 拉取被中断（SSL / 代理 502）</td><td>自动改用 ZIP 下载重试</td></tr>
+      <tr><td>默认分支不是 main</td><td>依次尝试 main、master，都不行再按默认分支取</td></tr>
+      <tr><td>npm 官方源很慢</td><td>优先走国内镜像 <code>registry.npmmirror.com</code>，失败再回退官方源</td></tr>
+      <tr><td>pip 很慢 / 镜像缺包</td><td>先做<b>依赖预检</b>（查 PyPI 上被固定版本有没有适配当前 Python 的轮子，2 秒级）；再依次尝试清华 → 阿里云 → PyPI 官方源；Python 依赖装在项目内 <code>vendor/</code>，不动系统环境</td></tr>
+      <tr><td>依赖需要编译（缺 pg_config / VC++）</td><td>识别为构建类错误，<b>立刻停止换源重试</b>，直接提示缺什么工具</td></tr>
+      <tr><td>npm 镜像缺版本（ETARGET）</td><td><b>依赖预检</b>：装之前先查镜像是否有项目固定的版本（含 ^/~ 范围），缺则直接切官方源，省掉一次失败重试</td></tr>
+      <tr><td>下载很慢、看起来像卡住</td><td>npm 加 <code>--loglevel=http</code> 持续输出请求日志；每 30 秒心跳提示；静默判定放宽到 10 分钟（大仓库解析阶段 npm 默认几乎不打印）</td></tr>
+      <tr><td>要下载的东西占 C 盘</td><td>临时目录与 pip/npm 缓存统一放在 <code>E:\deploy_cache</code>（跟随程序所在盘），不占用系统盘</td></tr>
+      <tr><td>取消部署</td><td><b>立即生效</b>：马上终止子进程、停止写盘，状态变为「已取消」（不算失败）</td></tr>
+      <tr><td>项目没有 build 脚本</td><td>跳过构建，按静态/可运行源码直接部署</td></tr>
+      <tr><td>静态站点端口 8080 被占用</td><td>启动脚本自动顺延到 8081、8082…</td></tr>
+      <tr><td>构建失败</td><td>回传最后几行真实错误，并标明失败阶段</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">4</span>部署完成后你会得到</h2>
+    <ul>
+      <li><b>目标目录</b>里的可运行内容：静态站点是成品文件；Node 服务端项目是「源码 + node_modules」，可直接启动</li>
+      <li><b>启动.bat</b>：双击即可运行（静态站点会自动打开浏览器；Python / Node 首次运行会自动装依赖；项目自带 docker-compose 时优先用 Docker，没装 Docker 才退回本地运行）</li>
+      <li><b>使用说明.txt</b>：中文说明（判定、建议 Python 版本、启动方式、常见问题）</li>
+      <li><b>部署信息.json</b>：仓库、分支、类型、文件数、大小、环境版本、耗时等元信息</li>
+      <li>界面上的结果卡：文件数、体积、耗时、备份位置、启动命令、<b>免部署 / 需要部署</b> 判定，可一键「打开目录 / 启动项目 / 复制路径 / 补装依赖」</li>
+      <li>历史记录：<code>data/deploy_history.json</code>（界面「🕘 部署记录」可查）</li>
+    </ul>
+    <div class="tip warn">⚠️ <b>启动.bat 一律是纯英文（ASCII）</b>：Windows 批处理按系统 ANSI 代码页（中文系统是 GBK/936）解析文件，如果里面写 UTF-8 中文，cmd 会把它拆成非法命令，报「'xx' 不是内部或外部命令」。中文说明因此放在「使用说明.txt」里。</div>
+    <div class="tip">🧩 依赖没装齐时（多见于 Python 版本不匹配），结果卡上会出现「🧩 补装依赖」按钮，点一下即可在已部署目录里重装依赖，并自动重写启动脚本。</div>
+    <div class="tip warn">⚠️ 纯库项目（如 <code>expressjs/express</code> 本体）没有 start/build 脚本，部署后只能作为源码使用；要跑起来请换成带 demo 的应用仓库。</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">5</span>失败时怎么读懂提示</h2>
+    <p>每条失败都会带「阶段」和「原因」，例如：</p>
+<pre><code>[校验路径] 路径必须是绝对路径（带盘符），例如 E:\pc\桌面\github\xxt，不支持相对路径
+[获取源码] 源码获取失败：下载失败（HTTP 404）        → 仓库不存在或分支不对
+[安装依赖] 依赖安装失败：npm ERR! network …          → 网络问题，检查代理
+[构建项目] 构建失败（npm run build）：…              → 看最后几行真实报错</code></pre>
+    <p>对应处理：改路径 / 换仓库地址 / 开代理或加速器 / 在本地先手动跑一次构建看完整日志。</p>
+  </div>
+
+  <div class="card" id="summary">
+    <h2><span class="n">6</span>问题总结（出错时自动生成）</h2>
+    <p><b>什么时候自动生成：</b>部署过程中一旦出现错误（哪怕后来靠 ZIP 兜底成功了），或最终部署失败，结束时会自动汇总本次全部问题，生成一份“问题总结”。</p>
+    <p><b>按钮在哪：</b>「🚀 一键部署」弹窗底部按钮区，<b>「📖 部署说明」的左侧</b>，名为 <b>📋 问题总结</b>。</p>
+    <table>
+      <tr><th>状态</th><th>按钮表现</th></tr>
+      <tr><td>还没部署 / 本次零问题</td><td>置灰不可点，鼠标悬停提示「本次部署没有发现问题」</td></tr>
+      <tr><td>有提示（如走了 ZIP 兜底、非空目录已备份、无 start 脚本）</td><td>可点击，右侧黄色数字徽标显示条数</td></tr>
+      <tr><td>有错误 / 最终失败</td><td>可点击，红色数字徽标；失败结果卡里也会出现「📋 查看问题总结」快捷入口</td></tr>
+    </table>
+    <p><b>点击后看到什么：</b></p>
+    <ul>
+      <li><b>概览</b>：时间、结果、失败阶段、项目与分支、目标路径、类型与策略、耗时</li>
+      <li><b>失败原因</b>：自动归类的根因（网络中断 / 仓库不存在 / 无写权限 / 依赖安装 / 构建失败 / 缺少环境…）+ 原始错误信息</li>
+      <li><b>处理建议</b>：针对该类问题的可执行步骤（如「开代理后重试」「确认分支名」）</li>
+      <li><b>问题清单</b>：按时间列出每条错误/提示，含阶段、说明、建议</li>
+      <li><b>已自动处理</b>：本次自动做过的补救（Git→ZIP、分支回退、镜像切换、目录备份…）</li>
+      <li><b>环境信息</b>：Node / npm / Git / Python / Go 版本、系统架构、目标盘剩余空间</li>
+      <li><b>关键日志</b>：最后 30 条运行日志，便于定位</li>
+    </ul>
+    <div class="tip">💾 总结可「复制」到聊天窗口，或「另存为 Markdown」；每次部署的总结同时保存在
+      <code>data/deploy_issues/</code>（含 <code>latest.json</code> 与同名 <code>.md</code>），便于回溯。</div>
+  </div>
+
+  <div class="card" id="verdict">
+    <h2><span class="n">7</span>部署判定：免部署 / 需要部署</h2>
+    <p>部署完成后会额外给出一项判定，写在<b>结果卡</b>、<b>问题总结</b>（概览行「部署判定」）和 <code>部署信息.json</code> 里。</p>
+    <table>
+      <tr><th>判定</th><th>典型项目</th><th>理由与建议</th></tr>
+      <tr><td>📄 免部署</td><td>纯静态页 / 文档站；Node、Python、Go 的<br>库与工具包（无 start/build、无 Web 框架、无 main）</td><td>双击 <code>index.html</code> 或按 README 引用即可，不需要常驻服务；要分享再用「▶ 启动」起本地静态服务器</td></tr>
+      <tr><td>🚀 需要部署</td><td>带 Dockerfile / Compose；Node 有 start 或 build；<br>Python 有 Flask/Django/FastAPI/Gradio 或 app.py；Go 有 main 包；PHP</td><td>需要构建产物或常驻进程；点「▶ 启动」/ 双击 启动.bat，或用 Coolify 部署</td></tr>
+    </table>
+    <div class="tip">💡 判定只是<b>建议</b>，不影响文件落位：即使判为「免部署」，源码与启动脚本也已经完整放进目标目录。</div>
+  </div>
+
+  <footer>GitHub 热门项目分析报告生成器 · 一键部署（本地路径）</footer>
+</div>
+</body>
+</html>

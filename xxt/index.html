@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub 开源项目下载工具</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    --accent:#4f6ef7; --accent2:#06b6d4;
+    --ink:#1e293b; --ink2:#64748b; --ink3:#94a3b8;
+    --line:#e2e8f0; --bg:#f4f6fb;
+  }
+  body {
+    font-family:"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+    color:var(--ink); min-height:100vh; display:flex; justify-content:center; padding:30px 14px 40px;
+    background:
+      radial-gradient(600px 300px at 15% 0%, rgba(79,110,247,.10), transparent 60%),
+      radial-gradient(600px 300px at 85% 0%, rgba(6,182,212,.10), transparent 60%),
+      linear-gradient(rgba(79,110,247,.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(79,110,247,.045) 1px, transparent 1px),
+      var(--bg);
+    background-size:auto,auto,32px 32px,32px 32px,auto;
+  }
+  .app { width:100%; max-width:740px; }
+  header { text-align:center; margin-bottom:26px; }
+  .logo {
+    display:inline-flex; align-items:center; justify-content:center; width:52px; height:52px;
+    border-radius:16px; background:linear-gradient(135deg,var(--accent),var(--accent2));
+    box-shadow:0 8px 24px rgba(79,110,247,.35); font-size:26px; margin-bottom:12px;
+  }
+  header h1 {
+    font-size:25px; font-weight:800; letter-spacing:1px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  header p { color:var(--ink2); font-size:13px; margin-top:7px; }
+  .card {
+    background:#fff; border:1px solid var(--line); border-radius:16px;
+    padding:20px 22px; margin-bottom:16px;
+    box-shadow:0 4px 20px rgba(30,41,59,.06), 0 1px 3px rgba(30,41,59,.04);
+  }
+  .card h2 { font-size:14px; color:var(--ink2); font-weight:700; margin-bottom:13px; display:flex; align-items:center; gap:9px; }
+  .step-num {
+    display:inline-flex; width:21px; height:21px; border-radius:7px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff;
+    font-size:12px; font-weight:800; align-items:center; justify-content:center;
+    box-shadow:0 2px 8px rgba(79,110,247,.35);
+  }
+  .row { display:flex; gap:10px; }
+  input[type=text] {
+    flex:1; background:#f8fafc; border:1.5px solid var(--line); color:var(--ink); border-radius:10px;
+    padding:11px 13px; font-size:14px; outline:none; transition:all .2s; width:100%;
+  }
+  input[type=text]:focus { border-color:var(--accent); background:#fff; box-shadow:0 0 0 4px rgba(79,110,247,.12); }
+  button { border:none; border-radius:10px; padding:11px 18px; font-size:14px; font-weight:600; cursor:pointer; transition:all .15s; white-space:nowrap; }
+  button:disabled { opacity:.45; cursor:not-allowed; box-shadow:none; }
+  .btn-primary {
+    background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff;
+    box-shadow:0 4px 14px rgba(79,110,247,.4);
+  }
+  .btn-primary:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 6px 20px rgba(79,110,247,.5); }
+  .btn-ghost { background:#f1f5f9; color:var(--ink); border:1px solid var(--line); }
+  .btn-ghost:hover:not(:disabled) { background:#e2e8f0; }
+  .btn-danger { background:#fff; color:#e11d48; border:1.5px solid #fecdd3; }
+  .btn-danger:hover:not(:disabled) { background:#fff1f2; }
+  .tip { font-size:13px; margin-top:10px; min-height:18px; }
+  .tip.ok { color:#059669; } .tip.err { color:#e11d48; } .tip.dim { color:var(--ink3); }
+  .repo-info {
+    display:none; margin-top:12px; background:linear-gradient(135deg,#f8faff,#f0fbfd);
+    border:1px solid #dbe4ff; border-radius:12px; padding:13px 15px;
+  }
+  .repo-info.show { display:block; animation:fadein .3s; }
+  @keyframes fadein { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:none} }
+  .repo-info .name { color:var(--accent); font-weight:700; font-size:15px; }
+  .repo-info .desc { color:var(--ink2); font-size:13px; margin-top:5px; line-height:1.5; }
+  .repo-info .meta { display:flex; gap:16px; margin-top:9px; font-size:12px; color:var(--ink2); flex-wrap:wrap; }
+  .repo-info .meta b { color:var(--ink); }
+  /* 下载方式 */
+  .mode-group { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .mode-item {
+    background:#f8fafc; border:2px solid var(--line); border-radius:12px; padding:14px;
+    cursor:pointer; transition:all .18s; text-align:center; position:relative;
+  }
+  .mode-item:hover { border-color:#c7d2fe; transform:translateY(-1px); }
+  .mode-item.active {
+    border-color:var(--accent); background:linear-gradient(135deg,rgba(79,110,247,.07),rgba(6,182,212,.07));
+    box-shadow:0 4px 14px rgba(79,110,247,.15);
+  }
+  .mode-item.active::after {
+    content:'✓'; position:absolute; top:8px; right:10px; width:18px; height:18px; border-radius:50%;
+    background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff;
+    font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center;
+  }
+  .mode-item .t { font-weight:700; font-size:14px; }
+  .mode-item .d { color:var(--ink2); font-size:12px; margin-top:5px; line-height:1.5; }
+  .extract-opt { margin-top:13px; font-size:13px; color:var(--ink2); display:flex; align-items:center; gap:8px; cursor:pointer; }
+  .extract-opt input { accent-color:var(--accent); width:15px; height:15px; cursor:pointer; }
+  /* Release 面板 */
+  .release-panel { display:none; margin-top:14px; border-top:1px dashed var(--line); padding-top:14px; }
+  .release-panel.show { display:block; animation:fadein .25s; }
+  .platform-chips { display:flex; gap:8px; flex-wrap:wrap; }
+  .chip {
+    padding:7px 15px; border-radius:99px; font-size:13px; font-weight:600; cursor:pointer;
+    background:#f1f5f9; color:var(--ink2); border:1.5px solid transparent; transition:all .15s;
+  }
+  .chip:hover { background:#e2e8f0; }
+  .chip.active { background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; box-shadow:0 3px 10px rgba(79,110,247,.35); }
+  .rel-meta { font-size:12.5px; color:var(--ink2); margin:12px 0 8px; }
+  .rel-meta b { color:var(--ink); }
+  .rel-tag {
+    display:inline-block; background:#eef2ff; color:var(--accent); border-radius:6px;
+    padding:2px 8px; font-weight:700; font-size:12px; margin-right:6px;
+  }
+  .asset-list { max-height:190px; overflow-y:auto; border:1px solid var(--line); border-radius:10px; }
+  .asset-list::-webkit-scrollbar { width:8px; } .asset-list::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:4px; }
+  .asset-item { display:flex; align-items:center; gap:10px; padding:10px 13px; cursor:pointer; border-bottom:1px solid #f1f5f9; font-size:13px; transition:background .12s; }
+  .asset-item:last-child { border-bottom:none; }
+  .asset-item:hover { background:#f8faff; }
+  .asset-item.active { background:linear-gradient(90deg,rgba(79,110,247,.08),transparent); }
+  .asset-item input { accent-color:var(--accent); }
+  .asset-item .an { flex:1; word-break:break-all; font-weight:600; color:var(--ink); }
+  .asset-item .am { color:var(--ink3); font-size:12px; white-space:nowrap; }
+  .asset-item .type-badge {
+    flex-shrink:0; font-size:11px; font-weight:700; color:var(--accent);
+    background:#eef2ff; border:1px solid #dbe4ff; border-radius:6px; padding:1px 7px; white-space:nowrap;
+  }
+  .asset-group {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:8px 13px; font-size:12.5px; font-weight:700; color:var(--ink);
+    border-bottom:1px solid #eef2f7; position:sticky; top:0; z-index:2;
+    background:linear-gradient(90deg,rgba(79,110,247,.08),transparent);
+  }
+  .asset-group em { font-style:normal; color:var(--ink3); font-weight:600; font-size:11.5px; }
+  .rel-msg { font-size:13px; color:var(--ink2); padding:12px 2px 2px; }
+  .docker-box {
+    display:none; margin-top:12px; background:#0f172a; color:#e2e8f0; border-radius:10px; padding:13px 15px;
+    font-family:Consolas,monospace; font-size:13px; position:relative;
+  }
+  .docker-box.show { display:block; }
+  .docker-box .lbl { color:#7dd3fc; font-size:11px; margin-bottom:6px; font-family:inherit; letter-spacing:1px; }
+  .docker-box .copy {
+    position:absolute; top:10px; right:10px; background:#1e293b; color:#94a3b8; border:1px solid #334155;
+    border-radius:6px; padding:4px 10px; font-size:12px;
+  }
+  .docker-box .copy:hover { color:#fff; }
+  /* 进度 */
+  .progress-wrap { display:none; margin-top:16px; }
+  .progress-wrap.show { display:block; }
+  .progress-bar { height:10px; background:#eef2f7; border-radius:99px; overflow:hidden; border:1px solid var(--line); }
+  .progress-fill {
+    height:100%; width:0%; border-radius:99px; transition:width .3s;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    box-shadow:0 0 10px rgba(79,110,247,.5);
+  }
+  .progress-text { display:flex; justify-content:space-between; align-items:center; font-size:13px; color:var(--ink2); margin-top:8px; gap:8px; }
+  .progress-text .pct { color:var(--accent); font-weight:800; }
+  .progress-text .speed { font-size:12px; font-weight:700; white-space:nowrap; }
+  .progress-text .speed.fast { color:#059669; }
+  .progress-text .speed.normal { color:#2563eb; }
+  .progress-text .speed.slow { color:#d97706; }
+  .progress-text .speed.vslow { color:#dc2626; }
+  /* 日志 */
+  .log-box {
+    background:#0f172a; border:1px solid #1e293b; border-radius:12px; padding:12px 14px;
+    height:170px; overflow-y:auto; font-family:Consolas,monospace; font-size:12.5px; line-height:1.7; color:#94a3b8;
+  }
+  .log-box::-webkit-scrollbar { width:8px; } .log-box::-webkit-scrollbar-thumb { background:#334155; border-radius:4px; }
+  /* 通知条 */
+  .banner { display:none; border-radius:12px; padding:14px 16px; font-size:14px; margin-bottom:16px; line-height:1.7; animation:fadein .3s; }
+  .banner.success { display:block; background:#ecfdf5; border:1px solid #a7f3d0; color:#047857; word-break:break-all; }
+  .banner.error { display:block; background:#fff1f2; border:1px solid #fecdd3; color:#be123c; white-space:pre-line; word-break:break-all; }
+  .banner .open-link { color:var(--accent); cursor:pointer; text-decoration:underline; margin-left:8px; font-weight:600; }
+  footer { text-align:center; color:var(--ink3); font-size:12px; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">⬇</div>
+    <h1>GitHub 开源项目下载工具</h1>
+    <p>输入仓库地址 · 选择下载方式 · 一键获取源码 / 克隆 / 发行版</p>
+  </header>
+
+  <div id="banner" class="banner"></div>
+
+  <!-- 步骤1：URL -->
+  <div class="card">
+    <h2><span class="step-num">1</span>GitHub 项目地址</h2>
+    <div class="row">
+      <input type="text" id="urlInput" placeholder="例如：https://github.com/owner/repo" spellcheck="false">
+      <button class="btn-ghost" id="pasteBtn">粘贴</button>
+    </div>
+    <div class="tip" id="validateTip"></div>
+    <div class="repo-info" id="repoInfo">
+      <div class="name" id="riName"></div>
+      <div class="desc" id="riDesc"></div>
+      <div class="meta" id="riMeta"></div>
+    </div>
+  </div>
+
+  <!-- 步骤2：路径 -->
+  <div class="card">
+    <h2><span class="step-num">2</span>本地存储路径</h2>
+    <input type="text" id="pathInput" placeholder="手动输入路径，例如 D:\Projects 或 E:\code">
+    <div class="tip dim">路径不存在时会自动创建；项目将保存在该路径下的独立文件夹中</div>
+  </div>
+
+  <!-- 步骤3：方式 -->
+  <div class="card">
+    <h2><span class="step-num">3</span>下载方式</h2>
+    <div class="mode-group">
+      <div class="mode-item active" data-mode="zip">
+        <div class="t">📦 源码 ZIP</div>
+        <div class="d">无需安装 Git，速度更快<br>自动校验文件完整性</div>
+      </div>
+      <div class="mode-item" data-mode="clone">
+        <div class="t">🌿 Git 完整克隆</div>
+        <div class="d">含全部提交历史<br>需本机已安装 Git</div>
+      </div>
+      <div class="mode-item" data-mode="shallow">
+        <div class="t">🍃 Git 浅克隆</div>
+        <div class="d">仅最新提交，体积小<br>需本机已安装 Git</div>
+      </div>
+      <div class="mode-item" data-mode="release">
+        <div class="t">🚀 发行版 Release</div>
+        <div class="d">官方发布的成品安装包<br>按平台自动匹配</div>
+      </div>
+    </div>
+    <label class="extract-opt" id="extractOpt">
+      <input type="checkbox" id="autoExtract" checked> 下载后自动解压 ZIP（同时保留压缩包）
+    </label>
+
+    <!-- Release 平台与资产选择 -->
+    <div class="release-panel" id="releasePanel">
+      <div class="platform-chips" id="platformChips">
+        <div class="chip" data-p="auto">🧠 自动解析</div>
+        <div class="chip" data-p="windows">🪟 Windows</div>
+        <div class="chip" data-p="macos">🍎 macOS</div>
+        <div class="chip" data-p="linux">🐧 Linux</div>
+        <div class="chip" data-p="android">🤖 Android</div>
+        <div class="chip" data-p="ios">📱 iOS</div>
+        <div class="chip" data-p="docker">🐳 Docker</div>
+        <div class="chip" data-p="doc">📚 文档</div>
+        <div class="chip" data-p="checksum">🔒 校验文件</div>
+        <div class="chip" data-p="source">📄 源码包</div>
+      </div>
+      <div class="rel-meta" id="relMeta"></div>
+      <div class="asset-list" id="assetList" style="display:none"></div>
+      <div class="rel-msg" id="relMsg"></div>
+      <div class="docker-box" id="dockerBox">
+        <div class="lbl">DOCKER 镜像拉取命令</div>
+        <div id="dockerCmd"></div>
+        <button class="copy" id="dockerCopy">复制</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 下载按钮 -->
+  <div class="card">
+    <div class="row">
+      <button class="btn-primary" id="downloadBtn" style="flex:1" disabled>⬇ 开始下载</button>
+      <button class="btn-danger" id="cancelBtn" style="display:none">取消</button>
+    </div>
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-text"><span id="progressStage">准备中…</span><span id="progressSpeed" class="speed" style="display:none"></span><span class="pct" id="progressPct">0%</span></div>
+    </div>
+  </div>
+
+  <!-- 日志 -->
+  <div class="card">
+    <h2>📋 下载日志</h2>
+    <div class="log-box" id="logBox"><div style="color:#475569">等待任务开始…</div></div>
+  </div>
+
+  <footer>支持 Windows / macOS / Linux · 关闭服务窗口即退出工具</footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let currentMode = 'zip', currentJob = null, eventSource = null;
+let lastValid = false, selectedPlatform = null, selectedAssets = [], releaseTag = null;
+
+/* ---------- 日志 / 通知 ---------- */
+function addLog(msg) {
+  const box = $('logBox');
+  if (box.querySelector('div[style]')) box.innerHTML = '';
+  const div = document.createElement('div');
+  div.textContent = msg;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+function showBanner(type, html) {
+  const b = $('banner');
+  b.className = 'banner ' + type;
+  b.innerHTML = html;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function hideBanner() { $('banner').className = 'banner'; }
+
+/* ---------- 下载按钮可用性 ---------- */
+function refreshDownloadBtn() {
+  let ok = lastValid;
+  if (ok && currentMode === 'release') ok = selectedPlatform === 'docker' || selectedAssets.length > 0;
+  $('downloadBtn').disabled = !ok;
+  $('downloadBtn').textContent = (currentMode === 'release' && selectedAssets.length > 1)
+    ? `⬇ 下载 ${selectedAssets.length} 个文件`
+    : '⬇ 开始下载';
+}
+
+/* ---------- URL 校验 ---------- */
+let validateTimer = null;
+function setTip(ok, msg) {
+  const tip = $('validateTip');
+  tip.className = 'tip ' + (ok ? 'ok' : 'err');
+  tip.textContent = msg;
+  lastValid = ok;
+  refreshDownloadBtn();
+}
+async function validateUrl() {
+  const url = $('urlInput').value.trim();
+  $('repoInfo').classList.remove('show');
+  clearRelease();
+  if (!url) { $('validateTip').textContent = ''; $('validateTip').className = 'tip'; lastValid = false; refreshDownloadBtn(); return; }
+  try {
+    const r = await fetch('/api/validate', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ url }) });
+    const j = await r.json();
+    if (!j.ok) { setTip(false, '✗ ' + j.message); return; }
+    setTip(true, `✓ 格式正确：${j.owner}/${j.repo}`);
+    if (j.info) {
+      $('riName').textContent = j.info.fullName;
+      $('riDesc').textContent = j.info.desc || '（无项目描述）';
+      $('riMeta').innerHTML =
+        `<span>⭐ <b>${(j.info.stars||0).toLocaleString()}</b></span>` +
+        `<span>🌿 默认分支 <b>${j.info.branch}</b></span>` +
+        (j.info.license ? `<span>📄 <b>${j.info.license}</b></span>` : '') +
+        (j.info.sizeKB ? `<span>💾 约 <b>${j.info.sizeKB>1024?(j.info.sizeKB/1024).toFixed(1)+' MB':j.info.sizeKB+' KB'}</b></span>` : '');
+      $('repoInfo').classList.add('show');
+    }
+    if (currentMode === 'release' && selectedPlatform) fetchAssets();
+  } catch (e) { setTip(false, '✗ 无法连接本地服务'); }
+}
+$('urlInput').addEventListener('input', () => {
+  clearTimeout(validateTimer);
+  validateTimer = setTimeout(validateUrl, 450);
+});
+$('pasteBtn').onclick = async () => {
+  try { $('urlInput').value = await navigator.clipboard.readText(); validateUrl(); }
+  catch { $('urlInput').focus(); alert('请手动粘贴（浏览器限制了剪贴板访问）'); }
+};
+
+/* ---------- 模式选择 ---------- */
+document.querySelectorAll('.mode-item').forEach(el => {
+  el.onclick = () => {
+    document.querySelectorAll('.mode-item').forEach(x => x.classList.remove('active'));
+    el.classList.add('active');
+    currentMode = el.dataset.mode;
+    $('extractOpt').style.display = (currentMode === 'zip' || currentMode === 'release') ? 'flex' : 'none';
+    $('releasePanel').classList.toggle('show', currentMode === 'release');
+    if (currentMode === 'release' && !selectedPlatform) {
+      // 默认进入「自动解析」，一眼看清发行版里所有类型的文件
+      selectPlatform('auto');
+    }
+    refreshDownloadBtn();
+  };
+});
+
+/* ---------- Release 平台 / 资产 ---------- */
+function clearRelease() {
+  selectedAssets = []; releaseTag = null;
+  $('relMeta').textContent = '';
+  $('relMsg').textContent = '';
+  $('assetList').style.display = 'none';
+  $('dockerBox').classList.remove('show');
+}
+function selectPlatform(p) {
+  selectedPlatform = p;
+  document.querySelectorAll('#platformChips .chip').forEach(c =>
+    c.classList.toggle('active', c.dataset.p === p));
+  clearRelease();
+  refreshDownloadBtn();
+  if (p === 'docker') { showDocker(); return; }
+  if (lastValid) fetchAssets();
+  else $('relMsg').textContent = '请先在上方输入有效的 GitHub 项目地址';
+}
+document.querySelectorAll('#platformChips .chip').forEach(c => c.onclick = () => selectPlatform(c.dataset.p));
+
+function showDocker() {
+  const m = $('urlInput').value.trim().match(/github\.com[/:]([^/\s]+)\/([^/\s]+)/i) || $('urlInput').value.trim().match(/^([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)/);
+  const slug = m ? `${m[1]}/${m[2].replace(/\.git$/i,'')}` : 'owner/repo';
+  $('dockerCmd').textContent = `docker pull ghcr.io/${slug.toLowerCase()}:latest`;
+  $('dockerBox').classList.add('show');
+  $('relMsg').textContent = 'Docker 镜像需在已安装 Docker 的终端中执行上方命令拉取（若镜像托管于 Docker Hub，请将 ghcr.io 换成 docker.io）';
+}
+$('dockerCopy').onclick = async () => {
+  try { await navigator.clipboard.writeText($('dockerCmd').textContent); $('dockerCopy').textContent = '已复制 ✓'; setTimeout(() => $('dockerCopy').textContent = '复制', 1500); }
+  catch { alert('复制失败，请手动选择文本复制'); }
+};
+
+async function fetchAssets() {
+  const url = $('urlInput').value.trim();
+  $('relMsg').textContent = '正在查询发行版…';
+  $('assetList').style.display = 'none';
+  try {
+    const r = await fetch('/api/releases', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ url, platform: selectedPlatform }) });
+    const j = await r.json();
+    if (!j.ok) { $('relMsg').textContent = '⚠ ' + j.message; refreshDownloadBtn(); return; }
+    releaseTag = j.tag;
+    const date = j.publishedAt ? new Date(j.publishedAt).toLocaleDateString('zh-CN') : '';
+    $('relMeta').innerHTML = `<span class="rel-tag">${j.tag}</span><b>${j.name || ''}</b>${date ? ' · 发布于 ' + date : ''}` +
+      (j.totalAssets ? ` · 共 ${j.totalAssets} 个附件` : '');
+    if (j.auto && j.groups) {
+      renderAutoGroups(j.groups);
+      $('relMsg').textContent = j.groups.length
+        ? '已按类型自动解析全部附件，可多选批量下载（勾选每个文件前的 ✓）'
+        : '该发行版没有可下载的附件文件';
+    } else {
+      if (!j.matched && !j.empty) $('relMeta').innerHTML += ` · 未匹配到该类专属文件，已显示全部 ${j.totalAssets} 个文件`;
+      renderAssets(j.assets);
+      $('relMsg').textContent = (j.empty || !j.assets.length)
+        ? '该发行版没有这类文件，试试「🧠 自动解析」查看全部附件'
+        : '可多选批量下载（勾选每个文件前的 ✓）';
+    }
+  } catch { $('relMsg').textContent = '⚠ 无法连接本地服务'; }
+}
+function fmtSize(n) { return !n ? '' : n > 1048576 ? (n/1048576).toFixed(1)+' MB' : (n/1024).toFixed(0)+' KB'; }
+function bindAssetItem(item, a) {
+  const cb = item.querySelector('input');
+  const toggle = () => {
+    if (cb.checked) { if (!selectedAssets.some(x => x.name === a.name)) selectedAssets.push(a); }
+    else selectedAssets = selectedAssets.filter(x => x.name !== a.name);
+    item.classList.toggle('active', cb.checked);
+    refreshDownloadBtn();
+  };
+  cb.onchange = toggle;
+  item.onclick = e => { if (e.target !== cb) { cb.checked = !cb.checked; toggle(); } };
+}
+function renderAssets(assets) {
+  const list = $('assetList');
+  list.innerHTML = '';
+  assets.forEach(a => {
+    const item = document.createElement('div');
+    item.className = 'asset-item';
+    item.innerHTML = `<input type="checkbox"><span class="an"></span><span class="am">${fmtSize(a.size)}${a.downloads != null ? ' · ⬇' + a.downloads : ''}</span>`;
+    item.querySelector('.an').textContent = a.name;
+    if (a.typeName) {
+      const b = document.createElement('span');
+      b.className = 'type-badge'; b.textContent = a.typeName;
+      item.insertBefore(b, item.querySelector('.am'));
+    }
+    bindAssetItem(item, a);
+    list.appendChild(item);
+  });
+  if (assets.length) list.style.display = 'block';
+  refreshDownloadBtn();
+}
+function renderAutoGroups(groups) {
+  const list = $('assetList');
+  list.innerHTML = '';
+  groups.forEach(g => {
+    const h = document.createElement('div');
+    h.className = 'asset-group';
+    h.innerHTML = `<span>${g.typeName}</span><em>${g.assets.length} 个</em>`;
+    list.appendChild(h);
+    g.assets.forEach(a => {
+      const item = document.createElement('div');
+      item.className = 'asset-item';
+      item.innerHTML = `<input type="checkbox"><span class="an"></span><span class="am">${fmtSize(a.size)}${a.downloads != null ? ' · ⬇' + a.downloads : ''}</span>`;
+      item.querySelector('.an').textContent = a.name;
+      bindAssetItem(item, a);
+      list.appendChild(item);
+    });
+  });
+  if (groups.length) list.style.display = 'block';
+  refreshDownloadBtn();
+}
+
+/* ---------- 下载 ---------- */
+function setRunning(running) {
+  $('downloadBtn').style.display = running ? 'none' : 'block';
+  $('cancelBtn').style.display = running ? 'block' : 'none';
+  $('urlInput').disabled = $('pathInput').disabled = running;
+}
+function updateProgress(pct, stage, speed) {
+  $('progressFill').style.width = Math.min(100, pct) + '%';
+  $('progressPct').textContent = Math.min(100, Math.round(pct)) + '%';
+  if (stage) $('progressStage').textContent = stage;
+  const sp = $('progressSpeed');
+  if (speed != null && speed > 0) {
+    const lv = speedLevel(speed);
+    sp.textContent = fmtSpeed(speed) + ' · ' + lv.label;
+    sp.className = 'speed ' + lv.cls;
+    sp.style.display = 'inline';
+  } else {
+    sp.style.display = 'none';
+  }
+}
+function fmtSpeed(bps) {
+  if (bps >= 1048576) return (bps / 1048576).toFixed(1) + ' MB/s';
+  return Math.round(bps / 1024) + ' KB/s';
+}
+function speedLevel(bps) {
+  if (bps >= 5 * 1048576) return { label: '🚀 很快', cls: 'fast' };
+  if (bps >= 1048576) return { label: '✓ 正常', cls: 'normal' };
+  if (bps >= 200 * 1024) return { label: '🐢 偏慢', cls: 'slow' };
+  return { label: '⚠ 很慢', cls: 'vslow' };
+}
+$('downloadBtn').onclick = async () => {
+  hideBanner();
+  const url = $('urlInput').value.trim();
+  const dest = $('pathInput').value.trim();
+  if (!lastValid) { showBanner('error', '请先输入有效的 GitHub 项目地址'); return; }
+  if (!dest) { showBanner('error', '请输入本地存储路径'); return; }
+
+  // Docker：仅提供命令，无需下载
+  if (currentMode === 'release' && selectedPlatform === 'docker') { showDocker(); window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'}); return; }
+
+  const payload = { url, path: dest, mode: currentMode, autoExtract: $('autoExtract').checked };
+  if (currentMode === 'release') {
+    if (!selectedAssets.length) { showBanner('error', '请至少勾选一个要下载的发行版文件'); return; }
+    payload.assets = selectedAssets.map(a => ({ name: a.name, url: a.url, size: a.size }));
+    payload.tag = releaseTag;
+  }
+
+  $('logBox').innerHTML = '';
+  $('progressWrap').classList.add('show');
+  updateProgress(0, '准备中…');
+  setRunning(true);
+  try {
+    const r = await fetch('/api/download', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const j = await r.json();
+    if (!r.ok || j.error) {
+      setRunning(false);
+      showBanner('error', '启动下载失败：' + (j.error || '未知错误'));
+      return;
+    }
+    currentJob = j.jobId;
+    listenJob(j.jobId);
+  } catch (e) { setRunning(false); showBanner('error', '无法连接本地服务'); }
+};
+function listenJob(id) {
+  eventSource = new EventSource('/api/events?id=' + encodeURIComponent(id));
+  eventSource.onmessage = e => {
+    const ev = JSON.parse(e.data);
+    if (ev.type === 'log') addLog(ev.msg);
+    else if (ev.type === 'progress') updateProgress(ev.percent, ev.stage, ev.speed);
+    else if (ev.type === 'done') {
+      eventSource.close(); setRunning(false); updateProgress(100, '完成');
+      const r = ev.result;
+      let html;
+      if (r.files && r.files.length) {
+        const shown = r.files.slice(0, 3);
+        html = `✅ 下载完成，共 ${r.files.length} 个文件！`;
+        shown.forEach(f => { html += `<br>📄 ${f.name}：${f.path}${f.extracted ? '（已解压）' : ''}`; });
+        if (r.files.length > 3) html += `<br>…等共 ${r.files.length} 个文件，其余详见文件夹`;
+      } else {
+        const loc = r.file || r.dir;
+        html = `✅ 下载完成，文件完整性校验通过！${r.fileCount ? '共 ' + r.fileCount + ' 个文件。' : ''}<br>` +
+          (r.file ? `📄 文件位置：${r.file}` : `📂 项目位置：${r.dir}`) +
+          (r.zip ? `<br>📦 压缩包：${r.zip}` : '');
+      }
+      html += `<span class="open-link" id="openFolderLink">打开所在文件夹 →</span>`;
+      showBanner('success', html);
+      $('openFolderLink').onclick = () =>
+        fetch('/api/open', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ path: r.dir }) });
+      currentJob = null;
+    } else if (ev.type === 'error') {
+      eventSource.close(); setRunning(false);
+      showBanner('error', '❌ 下载失败：' + ev.message);
+      currentJob = null;
+    } else if (ev.type === 'cancelled') {
+      eventSource.close(); setRunning(false);
+      addLog('任务已被用户取消');
+      showBanner('error', '⚠ 下载已取消，临时文件已清理');
+      currentJob = null;
+    }
+  };
+  eventSource.onerror = () => {};
+}
+$('cancelBtn').onclick = async () => {
+  if (!currentJob) return;
+  $('cancelBtn').disabled = true;
+  await fetch('/api/cancel', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ jobId: currentJob }) });
+  $('cancelBtn').disabled = false;
+};
+</script>
+</body>
+</html>
