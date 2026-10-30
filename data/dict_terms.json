@@ -58,7 +58,7 @@
     "learn": "学习", "learning": "学习", "course": "课程", "tutorial": "教程", "book": "书籍", "guide": "指南",
     "interview": "面试", "awesome": "精选", "list": "清单", "collection": "合集", "starter": "起步模板",
     "download": "下载", "downloader": "下载器", "manager": "管理器", "assistant": "助手", "helper": "辅助工具",
-    "service": "服务", "microservices": "微服务", "network": "网络", "proxy": "代理", "vpn": "VPN",
+    "service": "服务", "microservices": "微服务", "network": "网络", "proxy": "代理", "vpn": "加速器",
     "game": "游戏", "games": "游戏", "player": "播放器", "player": "播放器", "music player": "音乐播放器",
     "note": "笔记", "notes": "笔记", "knowledge": "知识", "knowledge base": "知识库", "wiki": "维基", "rag": "检索增强生成",
     "embed": "嵌入", "embedding": "向量嵌入", "embeddings": "向量嵌入", "prompt": "提示词", "prompts": "提示词",
