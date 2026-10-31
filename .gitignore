@@ -51,3 +51,8 @@ desktop.ini
 _api_push.js
 _commit_message.txt
 
+
+# 本地发布脚本
+_sync.js
+_rm.js
+_p.js
