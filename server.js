@@ -604,6 +604,30 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname.startsWith('/reports/')) {
       const name = decodeURIComponent(url.pathname.slice('/reports/'.length));
       const fp = path.join(REPORTS_DIR, path.basename(name));
+      // 旧格式报告自愈：检测到旧模板就用同名 .md 重新渲染，避免旧文件一直不可用
+      if (/\.html?$/i.test(fp) && fs.existsSync(fp)) {
+        try {
+          const raw = fs.readFileSync(fp, 'utf8');
+          const isOld = raw.indexOf('view v-cards') === -1 && (raw.indexOf('cf-outer') !== -1 || raw.indexOf('slide-src') !== -1);
+          if (isOld) {
+            const mdPath = fp.replace(/\.html?$/i, '.md');
+            if (fs.existsSync(mdPath)) {
+              const md = fs.readFileSync(mdPath, 'utf8');
+              const period = (md.match(/统计周期[:：]\**\s*([^\n|]+)/) || [])[1] || '本月';
+              const date = (md.match(/生成日期[:：]\**\s*([0-9]{4}-[0-9]{2}-[0-9]{2})/) || [])[1] || '';
+              const title = `GitHub 热门项目分析报告（${period.trim().replace(/\*/g, '')}）${date ? ' ' + date : ''}`;
+              const html = E.mdToHtml(md, title);
+              fs.writeFileSync(fp, html, 'utf8');
+              res.writeHead(200, {
+                'Content-Type': 'text/html; charset=utf-8',
+                'Content-Length': Buffer.byteLength(html),
+                'Cache-Control': 'no-store',
+              });
+              return res.end(html);
+            }
+          }
+        } catch (e) { /* 自愈失败则按原样返回 */ }
+      }
       return serveFile(res, fp);
     }
 

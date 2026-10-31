@@ -16,6 +16,7 @@
   --card:#ffffff;
   --shadow:0 8px 26px rgba(38,60,105,.10),0 2px 8px rgba(38,60,105,.06);
   --radius:14px;
+  --frost:10px;          /* 壁纸磨砂 / 背景虚化强度，由右上角滑杆实时改写 */
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%}
@@ -35,7 +36,9 @@ body{
 ::-webkit-scrollbar-thumb:hover{background:#94a9cc}
 
 /* ============ 背景层：柔和光斑 + 网格 + 光晕 ============ */
-.bg{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+/* inset 负值 + blur：图层比视口大一圈，模糊后边缘不会漏出白边 */
+.bg{position:fixed;inset:-6%;pointer-events:none;z-index:0;overflow:hidden;
+  filter:blur(calc(var(--frost) * .5))}
 .bg .stars{position:absolute;inset:0;background-image:
   radial-gradient(2.2px 2.2px at 25px 35px,rgba(120,150,220,.5)),
   radial-gradient(1.6px 1.6px at 120px 90px,rgba(140,170,230,.45)),
@@ -139,7 +142,7 @@ header{display:flex;align-items:center;gap:14px;padding:6px 4px 16px;flex-wrap:w
 .btn:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(38,60,105,.14);border-color:var(--blue)}
 .btn:active{transform:translateY(0)}
 .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
-.btn.big{flex:1;min-width:230px;padding:15px 26px;font-size:17px;letter-spacing:1px;
+.btn.big{width:100%;min-width:0;padding:14px 22px;font-size:16px;letter-spacing:.6px;
   background:linear-gradient(135deg,#16a34a,#0d9b7a 70%,#0f8fa0);color:#ffffff;
   border:1px solid rgba(21,153,87,.55);box-shadow:0 8px 26px rgba(21,153,87,.28),inset 0 1px 0 rgba(255,255,255,.28)}
 .btn.big:hover{border-color:#12a050;box-shadow:0 10px 32px rgba(21,153,87,.4)}
@@ -335,8 +338,16 @@ details.overview .cnt{font-size:11px;font-weight:600;color:var(--muted);font-fam
 .wall-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;background:#05080f}
 .wall-empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:24px;
   color:#8fa2c0;font-size:13px;line-height:2.1;letter-spacing:.3px}
-.wall-empty b{color:#dbe8ff}
-.wall-empty code{font-family:'Share Tech Mono',monospace;color:#8fd6a8;background:rgba(143,214,168,.10);padding:1px 6px;border-radius:5px}
+.wall-frame.is-empty{background:linear-gradient(160deg,#eff4fc 0%,#e5edf9 100%);
+  border-color:rgba(120,145,190,.28);box-shadow:inset 0 1px 0 #fff,0 18px 44px rgba(31,56,102,.10)}
+.stack .wall-frame.is-empty{background:linear-gradient(160deg,#f5f9fe 0%,#e9f1fb 100%);box-shadow:none}
+.wall-frame.is-empty .wall-bar{display:none}
+.we{display:flex;flex-direction:column;align-items:center;gap:9px;max-width:430px}
+.we-ic{width:44px;height:44px;color:#8195b3;opacity:.75}
+.we-t{margin:0;font-size:14px;font-weight:700;color:#2f4265;letter-spacing:.4px}
+.we-d{margin:0;font-size:12.5px;line-height:1.95;color:#61718c}
+.wall-empty code{font-family:'Share Tech Mono',monospace;color:#0f8a52;background:rgba(21,153,87,.10);
+  padding:1px 7px;border-radius:5px}
 .wall-bar{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:8px;padding:10px 14px;
   background:linear-gradient(180deg,transparent,rgba(4,8,16,.74));opacity:0;transition:.22s;pointer-events:none}
 .wall-frame:hover .wall-bar{opacity:1;pointer-events:auto}
@@ -350,6 +361,158 @@ details.overview .cnt{font-size:11px;font-weight:600;color:var(--muted);font-fam
   border-radius:9px;font-size:11px;font-weight:700;letter-spacing:.4px;white-space:nowrap}
 .wall-pin.on{background:linear-gradient(135deg,#ff8a3d,#ff6a2a);border-color:rgba(255,150,80,.9);color:#fff;
   box-shadow:0 0 16px rgba(255,120,50,.55)}
+
+/* ---- 壁纸预置层 + 磨砂层 ---- */
+.wall-bg{position:absolute;inset:0;z-index:0;background-size:cover;background-position:center;
+  transition:opacity .45s ease,filter .45s ease}
+/* 预设壁纸上的细节层：拉丝细纹 + 几颗散景光斑。
+   清晰时能看到纹路和圆的硬边，一进磨砂就化开成柔和光晕 —— 虚化到底有没有，看它最准。
+   只挂在 mode-detail 上，自定义图片 / 视频壁纸不叠这层，免得脏了人家自己的图 */
+.wall-frame.mode-detail .wall-bg::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background-image:
+    radial-gradient(circle at 17% 22%,rgba(255,255,255,.40) 0 30px,rgba(255,255,255,0) 30.6px),
+    radial-gradient(circle at 74% 33%,rgba(255,255,255,.26) 0 15px,rgba(255,255,255,0) 15.6px),
+    radial-gradient(circle at 41% 71%,rgba(255,255,255,.32) 0 24px,rgba(255,255,255,0) 24.6px),
+    radial-gradient(circle at 86% 78%,rgba(255,255,255,.22) 0 11px,rgba(255,255,255,0) 11.6px),
+    radial-gradient(circle at 60% 12%,rgba(255,255,255,.28) 0 18px,rgba(255,255,255,0) 18.6px),
+    repeating-linear-gradient(116deg,rgba(255,255,255,.075) 0 24px,rgba(255,255,255,0) 24px 52px),
+    repeating-linear-gradient(116deg,rgba(255,255,255,.13) 0 1px,rgba(255,255,255,0) 1px 7px)}
+.wall-sheen{position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(130% 120% at 50% 46%,rgba(4,10,22,0) 52%,rgba(4,10,22,.24) 100%),
+    linear-gradient(118deg,rgba(255,255,255,.20) 0%,rgba(255,255,255,0) 34%,rgba(255,255,255,.06) 62%,rgba(255,255,255,0) 100%)}
+.wall-video{background:transparent;z-index:1;transition:opacity .35s ease}
+/* 空状态和底部工具条必须压在磨砂层之上，否则会被 backdrop-filter 一起糊掉 */
+.wall-empty{z-index:4}
+.wall-bar{z-index:6}
+/* 磨砂层：真·高斯模糊 + 提饱和 + 一点点提亮，再叠霜面高光和颗粒 */
+.wall-frost{position:absolute;inset:-2px;z-index:3;pointer-events:none;
+  -webkit-backdrop-filter:blur(var(--frost)) saturate(1.55) brightness(1.05);
+          backdrop-filter:blur(var(--frost)) saturate(1.55) brightness(1.05);
+  background:linear-gradient(152deg,rgba(255,255,255,.26) 0%,rgba(255,255,255,.06) 46%,rgba(8,14,28,.11) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.44),inset 0 0 110px rgba(8,14,28,.10)}
+.wall-frost::after{content:'';position:absolute;inset:0;opacity:.17;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:150px 150px}
+
+/* ---- 壁纸预设选择条 ---- */
+.wall-presets{position:absolute;top:12px;right:12px;z-index:5;display:flex;align-items:center;gap:7px;
+  padding:6px 8px;border-radius:13px;background:rgba(10,16,28,.26);border:1px solid rgba(255,255,255,.22);
+  backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);
+  opacity:.74;transform:translateY(-3px);transition:opacity .22s,transform .22s}
+.wall-frame:hover .wall-presets,.wall-presets:hover,.wall-presets:focus-within{opacity:1;transform:none}
+.wall-frame.report-on .wall-presets{opacity:0;pointer-events:none;transform:translateY(-6px)}
+.wall-frame.report-on .wall-bar{opacity:0;pointer-events:none}
+.wp-chip{width:22px;height:22px;padding:0;border-radius:8px;cursor:pointer;flex:none;
+  border:1px solid rgba(255,255,255,.55);box-shadow:0 2px 7px rgba(4,10,22,.28);transition:.16s;position:relative}
+.wp-chip:hover{transform:translateY(-1px) scale(1.07)}
+.wp-chip.on{box-shadow:0 0 0 2px #fff,0 2px 8px rgba(4,10,22,.32)}
+.wp-chip.on::after{content:'';position:absolute;left:50%;top:50%;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;
+  border-radius:50%;background:#fff;box-shadow:0 0 0 1.5px rgba(8,16,30,.35)}
+.wp-chip.wp-add{background:rgba(255,255,255,.18);border:1px dashed rgba(255,255,255,.62);
+  color:#fff;display:grid;place-items:center}
+.wp-chip.wp-add svg{width:11px;height:11px;opacity:.92}
+.wp-chip.wp-add:hover{background:rgba(255,255,255,.32);border-color:#fff}
+.wp-chip.wp-custom{background-size:cover;background-position:center}
+/* 自定义壁纸容器 + 右上角删除角标：选中时或鼠标移上去才出现，避免误触 */
+.wp-cwrap{position:relative;display:inline-flex;flex:none}
+.wp-del{position:absolute;right:-5px;top:-6px;width:15px;height:15px;padding:0;border-radius:50%;
+  display:grid;place-items:center;cursor:pointer;z-index:3;
+  background:#e0474c;color:#fff;border:1.5px solid rgba(255,255,255,.94);
+  box-shadow:0 2px 6px rgba(6,12,24,.5);
+  opacity:0;transform:scale(.45);pointer-events:none;
+  transition:opacity .14s ease,transform .14s ease,background .14s}
+.wp-cwrap.on .wp-del{opacity:1;transform:none;pointer-events:auto}
+.wp-cwrap:hover .wp-del,.wp-del:focus-visible{opacity:1;transform:none;pointer-events:auto;transition-delay:.18s}
+.wp-del:hover{background:#c5343a;transform:scale(1.15)}
+.wp-del svg{width:8px;height:8px;pointer-events:none}
+.wp-sep{width:1px;height:16px;background:rgba(255,255,255,.28);margin:0 2px;flex:none}
+.wp-vid{width:auto;padding:0 9px;height:22px;border-radius:8px;display:inline-flex;align-items:center;gap:5px;
+  font-size:10.5px;font-weight:700;color:#f2f7ff;background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.30);cursor:pointer;font-family:inherit;white-space:nowrap}
+.wp-vid svg{width:11px;height:11px}
+.wp-vid.on{background:#fff;color:#16233c;border-color:#fff}
+/* 磨砂强度滑杆：直接改 :root 上的 --frost，壁纸与整页背景一起变 */
+/* 深色胶囊底：不管壁纸是浅是深，白滑轨和白数字都看得清 */
+.wp-frost{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px 0 7px;border-radius:8px;flex:none;
+  background:rgba(8,14,28,.42);border:1px solid rgba(255,255,255,.42);color:#fff;
+  box-shadow:0 1px 6px rgba(2,8,20,.28)}
+.wp-frost svg{width:13px;height:13px;flex:none;opacity:.96}
+.wp-frost input[type=range]{-webkit-appearance:none;appearance:none;width:74px;height:14px;margin:0;
+  background:transparent;cursor:pointer}
+.wp-frost input[type=range]::-webkit-slider-runnable-track{height:3px;border-radius:2px;background:rgba(255,255,255,.82)}
+.wp-frost input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;margin-top:-4.5px;
+  border-radius:50%;background:#fff;box-shadow:0 1px 5px rgba(0,0,0,.65)}
+.wp-frost input[type=range]::-moz-range-track{height:3px;border-radius:2px;background:rgba(255,255,255,.82)}
+.wp-frost input[type=range]::-moz-range-thumb{width:12px;height:12px;border:0;border-radius:50%;background:#fff}
+.wp-frost b{font-size:10.5px;font-weight:700;font-family:'Share Tech Mono',monospace;min-width:17px;text-align:right}
+.wall-frame.mode-preset #wallPin,.wall-frame.mode-preset #wallPrev,.wall-frame.mode-preset #wallPlay,
+.wall-frame.mode-preset #wallNext,.wall-frame.mode-preset #wallSound{display:none}
+
+/* ---- 报告窗口：贴在壁纸窗口上，配色取自壁纸 ---- */
+.rpt-layer{position:absolute;inset:0;z-index:9;padding:13px;display:flex;opacity:0;pointer-events:none;
+  transition:opacity .26s ease}
+.rpt-layer.on{opacity:1;pointer-events:auto}
+.rpt-win{position:relative;flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden;
+  border-radius:14px;border:1px solid rgba(255,255,255,.55);
+  box-shadow:0 26px 70px rgba(6,12,26,.42),0 2px 8px rgba(6,12,26,.18);
+  transform:translateY(14px) scale(.975);transition:transform .3s cubic-bezier(.2,.85,.25,1)}
+.rpt-layer.on .rpt-win{transform:none}
+.rpt-win::before{content:'';position:absolute;inset:0;z-index:0;
+  background:
+    radial-gradient(130% 100% at 10% 0%,color-mix(in srgb,var(--rp-a,#8fbcff) 58%,transparent),transparent 62%),
+    radial-gradient(110% 90% at 92% 106%,color-mix(in srgb,var(--rp-b,#bcd6ff) 52%,transparent),transparent 60%),
+    linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.40));
+  backdrop-filter:blur(34px) saturate(1.9);-webkit-backdrop-filter:blur(34px) saturate(1.9)}
+.rpt-win::after{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.09;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:150px 150px}
+.rpt-win.dark{border-color:rgba(255,255,255,.16);
+  box-shadow:0 30px 80px rgba(2,6,16,.62),0 2px 10px rgba(2,6,16,.4)}
+.rpt-win.dark::before{background:
+    radial-gradient(130% 100% at 10% 0%,color-mix(in srgb,var(--rp-a,#3d5f9e) 52%,transparent),transparent 62%),
+    radial-gradient(110% 90% at 92% 106%,color-mix(in srgb,var(--rp-b,#1e2a45) 58%,transparent),transparent 60%),
+    linear-gradient(180deg,rgba(14,20,34,.80),rgba(9,14,26,.72))}
+.rpt-head{position:relative;z-index:2;display:flex;align-items:center;gap:9px;padding:8px 8px 8px 13px;
+  border-bottom:1px solid rgba(255,255,255,.34);
+  background:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,.06))}
+.rpt-win.dark .rpt-head{background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.01));
+  border-bottom-color:rgba(255,255,255,.13)}
+.rpt-ic{width:17px;height:17px;flex:none;color:#2b3d5c;opacity:.8}
+.rpt-win.dark .rpt-ic{color:#cfe0ff}
+.rpt-title{font-size:13px;font-weight:800;color:#1f2f4b;letter-spacing:.2px;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;max-width:52%}
+.rpt-win.dark .rpt-title{color:#e6efff}
+.rpt-tag{flex:none;font-size:9.5px;font-weight:800;letter-spacing:.6px;color:#4a5f80;
+  padding:2px 7px;border-radius:5px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.7)}
+.rpt-win.dark .rpt-tag{color:#b9ccec;background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.16)}
+.rpt-grow{flex:1}
+.rpt-btn{width:28px;height:28px;flex:none;border-radius:7px;border:1px solid rgba(255,255,255,.42);
+  background:rgba(255,255,255,.30);color:#1f3153;display:grid;place-items:center;cursor:pointer;transition:.16s;padding:0}
+.rpt-btn svg{width:15px;height:15px}
+.rpt-btn:hover{background:rgba(255,255,255,.75);border-color:rgba(255,255,255,.95)}
+.rpt-win.dark .rpt-btn{color:#dbe6ff;background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.14)}
+.rpt-win.dark .rpt-btn:hover{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.26)}
+.rpt-btn.rpt-x:hover{background:#e5484d;border-color:#e5484d;color:#fff}
+.rpt-body{position:relative;z-index:1;flex:1;min-height:0;display:flex;background:transparent}
+.rpt-body iframe{flex:1;width:100%;height:100%;border:0;display:block;background:transparent}
+.rpt-md{margin:0;flex:1;padding:16px 20px 26px;overflow:auto;white-space:pre-wrap;word-break:break-word;
+  font-family:'Share Tech Mono',ui-monospace,Consolas,monospace;font-size:12.5px;line-height:1.9;color:#243450}
+.rpt-win.dark .rpt-md{color:#cfe0f5}
+.rpt-load{position:absolute;inset:0;display:grid;place-items:center;gap:0;font-size:12.5px;
+  color:#3b4f70;letter-spacing:.3px;pointer-events:none;transition:opacity .25s}
+.rpt-win.dark .rpt-load{color:#c6d8f5}
+.rpt-load[hidden]{display:none}
+.rpt-spin{width:22px;height:22px;border-radius:50%;border:2px solid rgba(60,90,140,.22);
+  border-top-color:#3f6fbf;animation:rptspin .8s linear infinite;margin:0 auto 10px}
+@keyframes rptspin{to{transform:rotate(360deg)}}
+.rpt-layer.max{position:fixed;inset:0;z-index:300;padding:18px 22px;background:rgba(6,12,24,.40);
+  backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+.rpt-layer.max .rpt-win{width:min(1460px,100%);margin:0 auto;flex:none;flex:1}
+/* 放大时临时去掉外层玻璃的 backdrop-filter：否则它会成为固定层级的包含块，导致窗口撑不满 */
+.stack.no-glass{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+body.rpt-max{overflow:hidden}
+body.rpt-max .log-fab,body.rpt-max .log-dock{opacity:0;pointer-events:none}
 
 /* 运行日志坞（右下角浮层，替代原来杯子里的日志） */
 .log-fab{position:fixed;right:18px;bottom:18px;z-index:70;width:46px;height:46px;border-radius:14px;cursor:pointer;
@@ -370,7 +533,7 @@ details.overview .cnt{font-size:11px;font-weight:600;color:var(--muted);font-fam
 /* ---------- 左：顶栏 + 控制台 / 右：视频，一张卡两栏一条竖线 ---------- */
 .stack{
   position:relative;z-index:1;margin:0 0 26px;border-radius:20px;
-  display:grid;grid-template-columns:minmax(360px,1.15fr) minmax(0,3fr);align-items:stretch;
+  display:grid;grid-template-columns:minmax(420px,1.05fr) minmax(0,2.75fr);align-items:stretch;
   background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(255,255,255,.78));
   border:1px solid rgba(255,255,255,.92);
   box-shadow:0 18px 46px rgba(31,56,102,.14),inset 0 1px 0 #fff;
@@ -722,15 +885,25 @@ header{
 /* ---------- 控制台 ---------- */
 .ops{overflow:hidden}
 .ops-body{padding:18px 20px 16px}
-.row{gap:10px}
+.row{display:grid;grid-template-columns:1fr;gap:10px}
+.ops .seg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.ops .seg button{justify-content:center;padding:9px 4px;font-size:12px;white-space:nowrap;gap:5px;min-width:0}
+.ops .seg button .e,.ops .seg button svg{flex:none}
 .seg{
   padding:4px;border-radius:12px;background:#eef2f9;border-color:rgba(120,145,190,.16);
   box-shadow:inset 0 1px 2px rgba(31,56,102,.06);
 }
-.seg button{border-radius:9px;padding:8px 16px;font-size:12.5px;color:#61718c}
+.seg button{border-radius:9px;padding:8px 16px;font-size:12.5px;color:#61718c;white-space:nowrap}
+.seg button svg{width:14px;height:14px;flex:none}
+.linkbtn svg,.langbtn svg{width:15px;height:15px;flex:none}
+.btn.sm-grid .e svg{width:19px;height:19px;stroke-width:1.6}
+.btn.sm-grid .e{display:grid;place-items:center}
+.btn.big svg{width:18px;height:18px;flex:none}
+.fold-head .fi svg{width:15px;height:15px}
+.log-fab svg{width:20px;height:20px}
 .seg button:hover{background:#fff;color:#22314e}
 .seg button.on{
-  background:#fff;color:#0f8a52;border:1px solid rgba(21,153,87,.22);
+  background:#fff;color:#0f8a52;border:1px solid rgba(21,153,87,.18);
   box-shadow:0 4px 12px rgba(21,153,87,.14);margin:0;
 }
 .datepick{border-radius:10px;background:#fff;border-color:rgba(120,145,190,.22)}
@@ -911,10 +1084,10 @@ footer{
     <div class="header-right">
       <div class="stat-chip">⚙ <b data-i18n="stEngine">引擎</b>：<span id="stEngine">auto</span></div>
       <div class="stat-chip">🌐 <span data-i18n="stProxy">代理</span>：<span id="stProxy">未设置</span></div>
-      <button class="linkbtn" onclick="openTool()">📦 <span data-i18n="btnTool">下载工具</span></button>
-      <button class="linkbtn" onclick="openHello()">👋 hello</button>
-      <button class="linkbtn" onclick="openAccelerator()">🚀 <span data-i18n="btnAcc">GitHub 加速器</span></button>
-      <button class="langbtn" id="langBtn" onclick="toggleLang()">🌐 <span id="langLabel">EN</span></button>
+      <button class="linkbtn" onclick="openTool()"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2v11.4"/><path d="m7.4 10.4 4.6 4.6 4.6-4.6"/><path d="M4.2 20h15.6"/></svg> <span data-i18n="btnTool">下载工具</span></button>
+      <button class="linkbtn" onclick="openHello()"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8.2 12.6V5.6a1.5 1.5 0 0 1 3 0v6.2"/><path d="M11.2 11.4V4.6a1.5 1.5 0 0 1 3 0v6.6"/><path d="M14.2 11.4V6.6a1.5 1.5 0 0 1 3 0v7.6"/><path d="M17.2 9.2a1.5 1.5 0 0 1 3 0v5.6a6.2 6.2 0 0 1-6.2 6.2h-1.2a5 5 0 0 1-4-2l-4.2-5.6a1.6 1.6 0 0 1 2.5-2l2.1 2.1"/></svg> hello</button>
+      <button class="linkbtn" onclick="openAccelerator()"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.2 2.4 4.6 13.6h6.2l-1 8 8.6-11.2h-6.2z"/></svg> <span data-i18n="btnAcc">GitHub 加速器</span></button>
+      <button class="langbtn" id="langBtn" onclick="toggleLang()"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="M3.4 12h17.2"/><path d="M12 3.4c2.4 2.6 3.7 5.5 3.7 8.6s-1.3 6-3.7 8.6c-2.4-2.6-3.7-5.5-3.7-8.6s1.3-6 3.7-8.6z"/></svg> <span id="langLabel">EN</span></button>
     </div>
   </header>
 
@@ -924,38 +1097,38 @@ footer{
     <div class="ops-body">
       <div class="row">
         <div class="seg" id="periodSeg">
-          <button data-p="daily" class="" onclick="setPeriod('daily')">🔥 <span data-i18n="periodDaily">本日热榜</span></button>
-          <button data-p="weekly" onclick="setPeriod('weekly')">📅 <span data-i18n="periodWeekly">本周热榜</span></button>
-          <button data-p="monthly" onclick="setPeriod('monthly')" class="on">🗓 <span data-i18n="periodMonthly">本月热榜</span></button>
-          <button data-p="custom" onclick="setPeriod('custom')">📆 <span data-i18n="periodCustom">自定义日期</span></button>
+          <button data-p="daily" class="" onclick="setPeriod('daily')"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2c.6 2.8 4 4.4 4 8a4 4 0 0 1-8 0c0-1.9 1-3.3 2-4.4.3 1 .9 1.6 1.7 1.9C12.4 6.8 12 4.8 12 3.2z"/></svg> <span data-i18n="periodDaily">本日热榜</span></button>
+          <button data-p="weekly" onclick="setPeriod('weekly')"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.6" y="5.2" width="16.8" height="15.2" rx="2.6"/><path d="M8 3.2v4M16 3.2v4M3.6 10.2h16.8"/><path d="M8 14h3"/></svg> <span data-i18n="periodWeekly">本周热榜</span></button>
+          <button data-p="monthly" onclick="setPeriod('monthly')" class="on"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.6" y="5.2" width="16.8" height="15.2" rx="2.6"/><path d="M8 3.2v4M16 3.2v4M3.6 10.2h16.8"/><rect x="6.6" y="13.2" width="3.2" height="3.2" rx=".7"/></svg> <span data-i18n="periodMonthly">本月热榜</span></button>
+          <button data-p="custom" onclick="setPeriod('custom')"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.6" y="5.2" width="16.8" height="15.2" rx="2.6"/><path d="M8 3.2v4M16 3.2v4M3.6 10.2h16.8"/><circle cx="8.2" cy="14" r=".9"/><circle cx="12" cy="14" r=".9"/><circle cx="15.8" cy="14" r=".9"/></svg> <span data-i18n="periodCustom">自定义日期</span></button>
         </div>
         <div class="datepick" id="datepick">
           <span data-i18n="datePick">选择日期</span>
           <input type="date" id="customDate">
         </div>
-        <button class="btn big" id="btnGen" onclick="generateReport()">🚀 <span data-i18n="btnGen">生成分析报告</span></button>
+        <button class="btn big" id="btnGen" onclick="generateReport()"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19.6V4.6"/><path d="m5.6 11 6.4-6.4L18.4 11"/></svg> <span data-i18n="btnGen">生成分析报告</span></button>
         <button class="btn big ghost" id="btnCancelGen" style="display:none" onclick="cancelGenerate()">⛔ <span data-i18n="btnCancelGen">取消</span></button>
       </div>
       <div class="progress" id="progress"><div class="bar" id="bar"></div><div class="pct" id="pct">0%</div></div>
       <div class="tools-fold" id="toolsFold">
         <button class="fold-head" type="button" onclick="toggleToolsFold()" aria-expanded="false" aria-controls="toolsGrid">
-          <span class="fi">🧰</span>
+          <span class="fi"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.4h16v10.2a1.8 1.8 0 0 1-1.8 1.8H5.8A1.8 1.8 0 0 1 4 18.6z"/><path d="M3 8.4h18"/><path d="M9 5.4a1.8 1.8 0 0 1 1.8-1.8h2.4A1.8 1.8 0 0 1 15 5.4v3"/><path d="M10 12v4M14 12v4"/></svg></span>
           <span class="ft" data-i18n="toolsMore">更多工具</span>
-          <span class="fh" data-i18n="toolsHint">部署 / 导出 / 历史 / 定时 / 连通性 / 二次开发</span>
+          <span class="fh" data-i18n="toolsHint">部署 · 导出 · 历史 · 定时 · 连通 · 开发</span>
           <span class="fc" id="toolsCount">10</span>
           <span class="chev">▾</span>
         </button>
         <div class="grid8" id="toolsGrid">
-          <button class="btn sm-grid" type="button" onclick="doExport()"><span class="e">📤</span><span data-i18n="btnExport">批量导出</span></button>
-          <button class="btn sm-grid" type="button" onclick="openFav()"><span class="e">⭐</span><span data-i18n="btnFav">收藏对比</span></button>
-          <button class="btn sm-grid" type="button" onclick="openHistory()"><span class="e">🕘</span><span data-i18n="btnHistory">报告历史</span></button>
-          <button class="btn sm-grid" type="button" onclick="openSchedule()"><span class="e">⏰</span><span data-i18n="btnSchedule">定时报告</span></button>
-          <button class="btn sm-grid" type="button" onclick="connTest()"><span class="e">🔌</span><span data-i18n="btnConn">连通性检测</span></button>
-          <button class="btn sm-grid" type="button" onclick="openDev()"><span class="e">🔧</span><span data-i18n="btnDev">二次开发</span></button>
-          <button class="btn sm-grid" type="button" id="btnDeploy" onclick="openDeploy()"><span class="e">🚀</span><span data-i18n="btnDeploy">一键部署</span></button>
-          <button class="btn sm-grid" type="button" id="aiDeployBtn" onclick="openAiDeploy()"><span class="e">🤖</span><span data-i18n="btnAiDeploy">AI 部署</span></button>
-          <button class="btn sm-grid" type="button" onclick="openSettings()"><span class="e">⚙</span><span data-i18n="btnSettings">设置</span></button>
-          <button class="btn sm-grid" type="button" onclick="openReports()"><span class="e">📂</span><span data-i18n="btnDir">报告目录</span></button>
+          <button class="btn sm-grid" type="button" onclick="doExport()"><span class="e"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16.8V5.4"/><path d="m7.4 9.8 4.6-4.6 4.6 4.6"/><path d="M4.2 20h15.6"/></svg></span><span data-i18n="btnExport">批量导出</span></button>
+          <button class="btn sm-grid" type="button" onclick="openFav()"><span class="e"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3.4 2.7 5.5 6 .9-4.3 4.2 1 5.9-5.4-2.8-5.4 2.8 1-5.9L3.3 9.8l6-.9z"/></svg></span><span data-i18n="btnFav">收藏对比</span></button>
+          <button class="btn sm-grid" type="button" onclick="openHistory()"><span class="e"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 7.4V12l3.2 1.9"/></svg></span><span data-i18n="btnHistory">报告历史</span></button>
+          <button class="btn sm-grid" type="button" onclick="openSchedule()"><span class="e"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13.2" r="7.4"/><path d="M12 9.6v3.6l2.6 1.6"/><path d="M5.2 4.6 7.6 7M18.8 4.6 16.4 7"/></svg></span><span data-i18n="btnSchedule">定时报告</span></button>
+          <button class="btn sm-grid" type="button" onclick="connTest()"><span class="e"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2.8v6M15 2.8v6"/><path d="M6.4 8.8h11.2v2.6a5.6 5.6 0 0 1-11.2 0z"/><path d="M12 16.8v4.4"/></svg></span><span data-i18n="btnConn">连通性检测</span></button>
+          <button class="btn sm-grid" type="button" onclick="openDev()"><span class="e"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15.4 3.4a5.2 5.2 0 0 0-4.9 6.6l-6.4 6.4a2 2 0 0 0 2.9 2.9l6.4-6.4a5.2 5.2 0 0 0 6.6-4.9l-3.3 3.3-2.9-2.9z"/></svg></span><span data-i18n="btnDev">二次开发</span></button>
+          <button class="btn sm-grid" type="button" id="btnDeploy" onclick="openDeploy()"><span class="e"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.2 2.4 4.6 13.6h6.2l-1 8 8.6-11.2h-6.2z"/></svg></span><span data-i18n="btnDeploy">一键部署</span></button>
+          <button class="btn sm-grid" type="button" id="aiDeployBtn" onclick="openAiDeploy()"><span class="e"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.8" y="7.6" width="16.4" height="12.2" rx="3.2"/><path d="M12 3.2v4.4"/><circle cx="9" cy="13.2" r="1"/><circle cx="15" cy="13.2" r="1"/><path d="M9.6 16.6h4.8"/></svg></span><span data-i18n="btnAiDeploy">AI 部署</span></button>
+          <button class="btn sm-grid" type="button" onclick="openSettings()"><span class="e"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.6v2.3M12 19.1v2.3M4.8 4.8l1.7 1.7M17.5 17.5l1.7 1.7M2.6 12h2.3M19.1 12h2.3M4.8 19.2l1.7-1.7M17.5 6.5l1.7-1.7"/></svg></span><span data-i18n="btnSettings">设置</span></button>
+          <button class="btn sm-grid" type="button" onclick="openReports()"><span class="e"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 7.4a2 2 0 0 1 2-2h4l2 2.4h7.2a2 2 0 0 1 2 2v7.6a2 2 0 0 1-2 2H5.4a2 2 0 0 1-2-2z"/></svg></span><span data-i18n="btnDir">报告目录</span></button>
         </div>
       </div>
     </div>
@@ -964,16 +1137,27 @@ footer{
       </div>
 
   <!-- ===== 壁纸视频台：html/壁纸 里放什么就播什么 ===== -->
-  <section class="wall-stage">
+  <section class="wall-stage" id="wallStage">
     <div class="wall-frame" id="wallFrame">
+      <div class="wall-bg" id="wallBg"></div>
+      <div class="wall-sheen" aria-hidden="true"></div>
       <video id="wallVideo" class="wall-video" playsinline muted preload="metadata"></video>
-      <div class="wall-empty" id="wallEmpty">
-        <div>🖼️ <b>html/壁纸</b> 里还没有视频<br>
-        把 mp4 / webm 放进去，这里会自动循环播放<br>
-        <code>壁纸/</code> 放多个视频会自动轮播</div>
+      <div class="wall-frost" aria-hidden="true"></div>
+      <div class="wall-empty" id="wallEmpty" style="display:none">
+        <div class="we">
+          <svg class="we-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2.6" y="4.4" width="18.8" height="15.2" rx="3.2"/>
+            <path d="M2.8 15.6l4.6-4.2a2 2 0 0 1 2.7 0l3.3 3 2.3-2.1a2 2 0 0 1 2.7 0l2.6 2.4"/>
+            <circle cx="9" cy="9.2" r="1.5"/>
+          </svg>
+          <p class="we-t">还没有壁纸视频</p>
+          <p class="we-d">把 mp4 / webm 放进 <code>壁纸/</code> 文件夹，这里会自动循环播放；放多个会依次轮播</p>
+        </div>
       </div>
+      <div class="wall-presets" id="wallPresets"></div>
+      <input type="file" id="wpFile" accept="image/*" hidden>
       <div class="wall-bar" id="wallBar">
-        <span class="wall-name" id="wallName">fa19ce0974f740c3544d9a8a09e6ce22.mp4</span>
+        <span class="wall-name" id="wallName">—</span>
         <span class="wall-grow"></span>
         <button class="wall-btn wall-pin" id="wallPin" title="选定此视频并循环播放，不再切换">📌 选定</button>
         <button class="wall-btn" id="wallPrev" title="上一个">⏮</button>
@@ -981,6 +1165,31 @@ footer{
         <button class="wall-btn" id="wallNext" title="下一个">⏭</button>
         <button class="wall-btn" id="wallSound" title="声音">🔇</button>
         <button class="wall-btn" id="wallFull" title="全屏">⛶</button>
+      </div>
+
+      <!-- ===== 报告窗口：直接贴在这块壁纸上，不再弹新窗口 ===== -->
+      <div class="rpt-layer" id="rptLayer" aria-hidden="true">
+        <div class="rpt-win" id="rptWin" role="dialog" aria-label="分析报告">
+          <div class="rpt-head">
+            <span class="rpt-ic">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.4 3.4h7.2l4 4v13.2H6.4z"/><path d="M13.4 3.4v4.2h4.2"/><path d="M9.2 12h5.6M9.2 15.4h5.6"/></svg>
+            </span>
+            <span class="rpt-title" id="rptTitle">分析报告</span>
+            <span class="rpt-tag" id="rptTag">HTML</span>
+            <span class="rpt-grow"></span>
+            <button class="rpt-btn" id="rptMax" title="放大 / 还原">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4H20v5.5"/><path d="M9.5 20H4v-5.5"/><path d="M20 4l-6.5 6.5"/><path d="M4 20l6.5-6.5"/></svg>
+            </button>
+            <button class="rpt-btn rpt-x" id="rptClose" title="关闭">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>
+            </button>
+          </div>
+          <div class="rpt-body" id="rptBody">
+            <div class="rpt-load" id="rptLoad"><div><div class="rpt-spin"></div>正在打开报告…</div></div>
+            <iframe id="rptFrame" title="分析报告"></iframe>
+            <pre class="rpt-md" id="rptMd" hidden></pre>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -1055,7 +1264,7 @@ footer{
 
 
   <!-- ===== 运行日志坞（右下角 📜 展开） ===== -->
-  <button class="log-fab new" id="logFab" onclick="toggleLogDock()" title="运行日志">📜</button>
+  <button class="log-fab new" id="logFab" onclick="toggleLogDock()" title="运行日志"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.4h11.2a2 2 0 0 1 2 2v13.2a2 2 0 0 1-2 2H6"/><path d="M6 3.4a2 2 0 0 0 0 4h2.4"/><path d="M8.4 3.4v17.2H17"/><path d="M10.6 9h5M10.6 12.4h5"/></svg></button>
   <div class="log-dock" id="logDock" hidden="">
     <div class="term-head" onclick="toggleTerm()">
       <div class="dots"><i></i><i></i><i></i></div>
@@ -1507,7 +1716,7 @@ const UI_STR = {
     periodDaily:'本日热榜',periodWeekly:'本周热榜',periodMonthly:'本月热榜',periodCustom:'自定义日期',datePick:'选择日期',
     btnGen:'生成分析报告',btnCancelGen:'取消',btnExport:'批量导出',btnFav:'收藏对比',btnHistory:'报告历史',btnTool:'下载工具',
     btnSchedule:'定时报告',btnConn:'连通性检测',btnSettings:'设置',btnDir:'报告目录',btnDev:'二次开发',
-    btnAiDeploy:'AI 部署',toolsMore:'更多工具',toolsHint:'部署 / 导出 / 历史 / 定时 / 连通性 / 二次开发',
+    btnAiDeploy:'AI 部署',toolsMore:'更多工具',toolsHint:'部署 · 导出 · 历史 · 定时 · 连通 · 开发',
     // 一键部署（Coolify）
     btnDeploy:'一键部署',dpTitle:'一键部署',dpChecking:'正在检测 Coolify 服务…',
     dpOnline:'Coolify 在线 · Token 已配置',dpNoToken:'Coolify 在线，但还没有配置 API Token',dpOffline:'Coolify 未启动',
@@ -1564,7 +1773,7 @@ const UI_STR = {
     periodDaily:'Today',periodWeekly:'This Week',periodMonthly:'This Month',periodCustom:'Custom Date',datePick:'Pick date',
     btnGen:'Generate Report',btnCancelGen:'Cancel',btnExport:'Export',btnFav:'Favorites',btnHistory:'History',btnTool:'Download Tool',
     btnSchedule:'Scheduler',btnConn:'Connectivity',btnSettings:'Settings',btnDir:'Reports',btnDev:'Dev Guide',
-    btnAiDeploy:'AI Deploy',toolsMore:'More tools',toolsHint:'deploy / export / history / schedule / connectivity / dev',
+    btnAiDeploy:'AI Deploy',toolsMore:'More tools',toolsHint:'deploy · export · history · schedule · ping · dev',
     // one-click deploy (Coolify)
     btnDeploy:'Deploy',dpTitle:'One-click Deploy',dpChecking:'Checking Coolify service…',
     dpOnline:'Coolify online · token configured',dpNoToken:'Coolify online, API token missing',dpOffline:'Coolify is not running',
@@ -1668,6 +1877,384 @@ function toggleToolsFold(force){
 
 /* ---------- 壁纸视频台：html/壁纸 里有什么就播什么 ---------- */
 let WALLS = [], WALL_I = 0, WALL_PIN = null; // WALL_PIN=被选定（循环播放）的视频名；null=未选定
+
+/* ---------- 内置壁纸预设：背景 + 磨砂，颜色同时给报告窗口用 ---------- */
+const WALL_PRESETS = [
+  { id:'bloom', name:'晨曦', dark:false, a:'#7aa6ff', b:'#c78de8',
+    bg:'radial-gradient(ellipse 68% 88% at 20% 16%,rgba(122,166,255,.92) 0%,rgba(122,166,255,0) 56%),radial-gradient(ellipse 54% 74% at 80% 10%,rgba(178,140,255,.82) 0%,rgba(178,140,255,0) 55%),radial-gradient(ellipse 82% 62% at 64% 102%,rgba(255,158,196,.80) 0%,rgba(255,158,196,0) 58%),radial-gradient(ellipse 34% 40% at 44% 46%,rgba(255,255,255,.62) 0%,rgba(255,255,255,0) 62%),linear-gradient(145deg,#eef4ff 0%,#e4ebfa 55%,#dfe6f8 100%)' },
+  { id:'mica', name:'云母', dark:false, a:'#93a8c4', b:'#c8d4e4',
+    bg:'radial-gradient(ellipse 70% 90% at 12% 8%,rgba(255,255,255,.95) 0%,rgba(255,255,255,0) 58%),radial-gradient(ellipse 60% 70% at 90% 96%,rgba(168,186,210,.78) 0%,rgba(168,186,210,0) 60%),radial-gradient(ellipse 46% 52% at 68% 26%,rgba(206,219,236,.72) 0%,rgba(206,219,236,0) 60%),linear-gradient(150deg,#fbfcfe 0%,#eaeff6 100%)' },
+  { id:'aurora', name:'极光', dark:true, a:'#2f8fae', b:'#6a4fbd',
+    bg:'radial-gradient(ellipse 60% 90% at 12% 8%,rgba(31,162,190,.92) 0%,rgba(31,162,190,0) 58%),radial-gradient(ellipse 62% 84% at 88% 12%,rgba(112,74,208,.88) 0%,rgba(112,74,208,0) 60%),radial-gradient(ellipse 78% 70% at 48% 108%,rgba(14,166,138,.78) 0%,rgba(14,166,138,0) 60%),radial-gradient(ellipse 30% 36% at 52% 44%,rgba(150,230,255,.20) 0%,rgba(150,230,255,0) 64%),linear-gradient(160deg,#07121f 0%,#0f1a31 58%,#080e1b 100%)' },
+  { id:'ember', name:'落日', dark:true, a:'#e8714f', b:'#8a3f7a',
+    bg:'radial-gradient(ellipse 58% 76% at 76% 10%,rgba(255,154,92,.92) 0%,rgba(255,154,92,0) 58%),radial-gradient(ellipse 66% 80% at 16% 26%,rgba(221,79,109,.85) 0%,rgba(221,79,109,0) 60%),radial-gradient(ellipse 86% 74% at 62% 108%,rgba(74,42,106,.92) 0%,rgba(74,42,106,0) 62%),radial-gradient(ellipse 26% 30% at 70% 30%,rgba(255,226,190,.34) 0%,rgba(255,226,190,0) 66%),linear-gradient(160deg,#26122c 0%,#3c1b33 55%,#170d1f 100%)' },
+  { id:'forest', name:'森屿', dark:false, a:'#5fb98c', b:'#79bdd2',
+    bg:'radial-gradient(ellipse 66% 86% at 14% 8%,rgba(150,220,180,.92) 0%,rgba(150,220,180,0) 58%),radial-gradient(ellipse 60% 72% at 88% 18%,rgba(150,208,226,.82) 0%,rgba(150,208,226,0) 58%),radial-gradient(ellipse 78% 66% at 58% 106%,rgba(226,242,190,.85) 0%,rgba(226,242,190,0) 60%),radial-gradient(ellipse 30% 34% at 46% 48%,rgba(255,255,255,.48) 0%,rgba(255,255,255,0) 62%),linear-gradient(150deg,#f4fbf6 0%,#e2f2ec 100%)' },
+  { id:'midnight', name:'午夜', dark:true, a:'#2f5b96', b:'#15233c',
+    bg:'radial-gradient(ellipse 62% 70% at 82% 8%,rgba(52,96,158,.92) 0%,rgba(52,96,158,0) 58%),radial-gradient(ellipse 84% 76% at 10% 104%,rgba(22,48,82,.95) 0%,rgba(22,48,82,0) 62%),radial-gradient(ellipse 26% 28% at 62% 34%,rgba(120,180,255,.20) 0%,rgba(120,180,255,0) 64%),linear-gradient(160deg,#080f1b 0%,#0d182b 60%,#060c15 100%)' }
+];
+let WALL_MODE = 'preset';                        // preset | video | custom
+let WALL_PRESET = WALL_PRESETS[0].id;
+let WALL_CUSTOM = '', WALL_CUSTOM_PAL = null;    // 自定义图片壁纸（dataURL + 采样出的配色）
+let WALL_FROST = 10;                             // 背景磨砂强度（px），0 = 完全清晰
+
+/* 磨砂强度：改写 :root 上的 --frost，壁纸层和整页背景层同时跟着变 */
+function setFrost(v, quiet){
+  WALL_FROST = Math.max(0, Math.min(40, Math.round(Number(v) || 0)));
+  document.documentElement.style.setProperty('--frost', WALL_FROST + 'px');
+  const val = document.getElementById('wpFrostVal');
+  if (val) val.textContent = WALL_FROST;
+  const sl = document.getElementById('wpFrost');
+  if (sl && Number(sl.value) !== WALL_FROST) sl.value = WALL_FROST;
+  try { localStorage.setItem('wallFrost', String(WALL_FROST)); } catch(e){}
+  if (!quiet) log('sys', '❄ 背景磨砂：' + WALL_FROST + 'px');
+}
+
+function wallPresetById(id){
+  return WALL_PRESETS.find(p => p.id === id) || WALL_PRESETS[0];
+}
+function renderWallPresets(){
+  const box = document.getElementById('wallPresets');
+  if (!box) return;
+  let html = WALL_PRESETS.map(p =>
+    '<button type="button" class="wp-chip' + ((WALL_MODE === 'preset' && WALL_PRESET === p.id) ? ' on' : '') +
+    '" data-wp="' + p.id + '" title="' + p.name + '" aria-label="' + p.name + '" style="background:' + p.bg + '"></button>'
+  ).join('');
+  if (WALL_CUSTOM){
+    html += '<span class="wp-cwrap' + (WALL_MODE === 'custom' ? ' on' : '') + '">' +
+      '<button type="button" class="wp-chip wp-custom' + (WALL_MODE === 'custom' ? ' on' : '') +
+      '" data-wp="__custom" title="自定义图片背景 · 鼠标移上去，点右上角红叉可移除" aria-label="自定义图片背景，移上去可移除" style="background-image:url(\'' + WALL_CUSTOM + '\')"></button>' +
+      '<button type="button" class="wp-del" data-wpdel="1" title="移除这张自定义壁纸（原图片文件不受影响）" aria-label="移除自定义壁纸">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>' +
+      '</button></span>';
+  }
+  html += '<button type="button" class="wp-chip wp-add" id="wpAdd" title="用本地图片当背景" aria-label="上传背景图">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5.5v13M5.5 12h13"/></svg></button>';
+  html += '<span class="wp-sep"></span>' +
+    '<label class="wp-frost" title="背景磨砂强度：0 = 完全清晰，往右越糊">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M3 7.2c2-1.7 4-1.7 6 0s4 1.7 6 0 4-1.7 6 0"/>' +
+    '<path d="M3 12c2-1.7 4-1.7 6 0s4 1.7 6 0 4-1.7 6 0"/>' +
+    '<path d="M3 16.8c2-1.7 4-1.7 6 0s4 1.7 6 0 4-1.7 6 0"/></svg>' +
+    '<input type="range" id="wpFrost" min="0" max="40" step="1" value="' + WALL_FROST + '" aria-label="背景磨砂强度">' +
+    '<b id="wpFrostVal">' + WALL_FROST + '</b></label>';
+  if (WALLS.length){
+    html += '<span class="wp-sep"></span>' +
+      '<button type="button" class="wp-vid' + (WALL_MODE === 'video' ? ' on' : '') + '" id="wpVid" title="播放 壁纸/ 文件夹里的视频">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5.5v13l11-6.5z"/></svg>视频</button>';
+  }
+  box.innerHTML = html;
+  box.querySelectorAll('[data-wp]').forEach(b => {
+    b.onclick = () => {
+      const k = b.getAttribute('data-wp');
+      if (k === '__custom') applyWallCustom(WALL_CUSTOM); else applyWallPreset(k);
+    };
+  });
+  const vb = box.querySelector('#wpVid');
+  if (vb) vb.onclick = () => { if (WALLS.length) playWall(WALL_I); };
+  const add = box.querySelector('#wpAdd');
+  if (add) add.onclick = () => { const f = document.getElementById('wpFile'); if (f) f.click(); };
+  const del = box.querySelector('[data-wpdel]');
+  if (del) del.onclick = (e) => { e.stopPropagation(); removeWallCustom(); };
+  const sl = box.querySelector('#wpFrost');
+  if (sl){
+    sl.value = WALL_FROST;
+    sl.oninput = () => setFrost(sl.value, true);        // 拖动时只改样式，不刷日志
+    sl.onchange = () => setFrost(sl.value, false);      // 松手才记一行
+  }
+}
+function applyWallPreset(id, quiet){
+  const p = wallPresetById(id);
+  WALL_MODE = 'preset';
+  WALL_PRESET = p.id;
+  try { localStorage.setItem('wallPreset', p.id); localStorage.setItem('wallMode', 'preset'); } catch(e){}
+  const bg = document.getElementById('wallBg');
+  if (bg){ bg.style.background = p.bg; bg.style.opacity = '1'; }
+  const v = document.getElementById('wallVideo');
+  if (v){ v.pause(); v.style.opacity = '0'; v.style.pointerEvents = 'none'; }
+  const wf = document.getElementById('wallFrame');
+  if (wf){ wf.classList.remove('is-empty'); wf.classList.add('mode-preset'); wf.classList.add('mode-detail'); }
+  const empty = document.getElementById('wallEmpty'); if (empty) empty.style.display = 'none';
+  const nm = document.getElementById('wallName'); if (nm) nm.textContent = p.name;
+  renderWallPresets();
+  skinReport();
+  if (!quiet) log('sys', '🖼 壁纸已切换：' + p.name);
+}
+function wallVideoOn(){
+  WALL_MODE = 'video';
+  try { localStorage.setItem('wallMode', 'video'); } catch(e){}
+  const bg = document.getElementById('wallBg'); if (bg) bg.style.opacity = '0';
+  const v = document.getElementById('wallVideo'); if (v){ v.style.opacity = '1'; v.style.display = 'block'; v.style.pointerEvents = ''; }
+  const wf = document.getElementById('wallFrame'); if (wf){ wf.classList.remove('is-empty'); wf.classList.remove('mode-preset'); wf.classList.remove('mode-detail'); }
+  const empty = document.getElementById('wallEmpty'); if (empty) empty.style.display = 'none';
+  skinReport();
+}
+
+/* ---------- 自定义图片壁纸 ---------- */
+function applyWallCustom(url, quiet){
+  if (!url) return;
+  WALL_CUSTOM = url;
+  WALL_MODE = 'custom';
+  try { localStorage.setItem('wallMode', 'custom'); localStorage.setItem('wallCustom', url); } catch(e){}
+  const bg = document.getElementById('wallBg');
+  if (bg){
+    bg.style.backgroundImage = 'url("' + url + '")';
+    bg.style.backgroundSize = 'cover';
+    bg.style.backgroundPosition = 'center';
+    bg.style.opacity = '1';
+  }
+  const v = document.getElementById('wallVideo');
+  if (v){ v.pause(); v.style.opacity = '0'; v.style.pointerEvents = 'none'; }
+  const wf = document.getElementById('wallFrame');
+  if (wf){ wf.classList.remove('is-empty'); wf.classList.add('mode-preset'); wf.classList.remove('mode-detail'); }
+  const empty = document.getElementById('wallEmpty'); if (empty) empty.style.display = 'none';
+  const nm = document.getElementById('wallName'); if (nm) nm.textContent = '自定义图片';
+  renderWallPresets();
+  WALL_CUSTOM_PAL = null;
+  skinReport();
+  sampleImageColor(url).then(pal => {
+    if (pal && WALL_MODE === 'custom'){ WALL_CUSTOM_PAL = pal; skinReport(); }
+  });
+  if (!quiet) log('sys', '🖼 壁纸已切换：自定义图片（鼠标移上去，点右上角红叉可移除）');
+}
+/* 移除自定义壁纸：清掉浏览器里存的副本和配色，回落到上次的预设壁纸。
+   只删 localStorage 里的 dataURL，用户磁盘上的原图不碰。 */
+function removeWallCustom(quiet){
+  const wasUsing = (WALL_MODE === 'custom');
+  WALL_CUSTOM = '';
+  WALL_CUSTOM_PAL = null;
+  try {
+    localStorage.removeItem('wallCustom');
+    if (wasUsing) localStorage.setItem('wallMode', 'preset');
+  } catch(e){}
+  if (wasUsing) applyWallPreset(WALL_PRESET, true);   // 正在用 → 回落到预设，别让壁纸空掉
+  else renderWallPresets();                           // 只是存着没在用 → 重绘让它消失
+  skinReport();
+  if (!quiet) log('sys', '🗑 已移除自定义壁纸（原图片文件未删除）');
+}
+function sampleImageColor(url){
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const W = 40, H = 23;
+        const c = document.createElement('canvas');
+        c.width = W; c.height = H;
+        const cx = c.getContext('2d', { willReadFrequently: true });
+        const iw = img.naturalWidth || img.width || W, ih = img.naturalHeight || img.height || H;
+        const sc = Math.max(W / iw, H / ih);
+        const dw = iw * sc, dh = ih * sc;
+        cx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+        const d = cx.getImageData(0, 0, W, H).data;
+        let sr = 0, sg = 0, sb = 0, n = 0, br = 0, bg2 = 0, bb = 0, bn = 0;
+        for (let i = 0; i < d.length; i += 4){
+          const r = d[i], g = d[i + 1], b = d[i + 2];
+          sr += r; sg += g; sb += b; n++;
+          if (luma([r, g, b]) > 150){ br += r; bg2 += g; bb += b; bn++; }
+        }
+        if (!n) return resolve(null);
+        const avg = [sr / n, sg / n, sb / n];
+        const hi = bn ? [br / bn, bg2 / bn, bb / bn] : avg.map(v => Math.min(255, v * 1.3));
+        resolve({ a: hexOf(punch(avg, 1.4)), b: hexOf(punch(hi, 1.15)), dark: luma(avg) < 128 });
+      } catch(e){ resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+}
+function pickWallImage(file){
+  if (!file) return;
+  const fr = new FileReader();
+  fr.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 1920;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX){ const r = Math.min(MAX / w, MAX / h); w = Math.round(w * r); h = Math.round(h * r); }
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      let url = c.toDataURL('image/jpeg', 0.86);
+      if (url.length > 1800000) url = c.toDataURL('image/jpeg', 0.66);
+      applyWallCustom(url, false);
+      if (url.length > 1800000) toast('图片偏大，浏览器可能存不下，刷新后会回到默认背景', 'warn');
+    };
+    img.onerror = () => toast('图片读取失败，换一张试试', 'warn');
+    img.src = fr.result;
+  };
+  fr.readAsDataURL(file);
+}
+
+/* ---------- 取色：把壁纸的颜色采样给报告窗口 ---------- */
+function rgbOf(hex){
+  const h = String(hex || '').replace('#', '');
+  const n = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+  return [parseInt(n.slice(0, 2), 16) || 0, parseInt(n.slice(2, 4), 16) || 0, parseInt(n.slice(4, 6), 16) || 0];
+}
+function hexOf(rgb){
+  return '#' + rgb.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+}
+function luma(rgb){ return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]; }
+function punch(rgb, k){
+  const avg = (rgb[0] + rgb[1] + rgb[2]) / 3;
+  return rgb.map(v => Math.max(0, Math.min(255, avg + (v - avg) * k)));
+}
+function sampleVideoColor(v){
+  try {
+    if (!v || v.readyState < 2 || !v.videoWidth) return null;
+    const W = 40, H = 23;
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const cx = c.getContext('2d', { willReadFrequently: true });
+    cx.drawImage(v, 0, 0, W, H);
+    const d = cx.getImageData(0, 0, W, H).data;
+    let sr = 0, sg = 0, sb = 0, n = 0, br = 0, bg2 = 0, bb = 0, bn = 0;
+    for (let i = 0; i < d.length; i += 4){
+      const r = d[i], g = d[i + 1], b = d[i + 2];
+      sr += r; sg += g; sb += b; n++;
+      if (luma([r, g, b]) > 150){ br += r; bg2 += g; bb += b; bn++; }
+    }
+    if (!n) return null;
+    const avg = [sr / n, sg / n, sb / n];
+    const hi = bn ? [br / bn, bg2 / bn, bb / bn] : avg.map(v2 => Math.min(255, v2 * 1.3));
+    return { a: hexOf(punch(avg, 1.45)), b: hexOf(punch(hi, 1.2)), dark: luma(avg) < 118 };
+  } catch(e){ return null; }
+}
+function wallPalette(){
+  if (WALL_MODE === 'custom'){
+    if (WALL_CUSTOM_PAL) return WALL_CUSTOM_PAL;
+    return { a: '#243a5e', b: '#3f5580', dark: true };
+  }
+  if (WALL_MODE === 'video'){
+    const s = sampleVideoColor(document.getElementById('wallVideo'));
+    if (s) return s;
+  }
+  const p = wallPresetById(WALL_PRESET);
+  return { a: p.a, b: p.b, dark: !!p.dark };
+}
+function skinReport(){
+  const lay = document.getElementById('rptLayer'), win = document.getElementById('rptWin');
+  if (!lay || !win) return;
+  const pal = wallPalette();
+  lay.style.setProperty('--rp-a', pal.a);
+  lay.style.setProperty('--rp-b', pal.b);
+  win.classList.toggle('dark', !!pal.dark);
+}
+function forceEmbed(d){
+  try {
+    if (!d || !d.head || d.getElementById('rpt-embed-fix')) return;
+    // 新版模板支持 data-theme，可以透明嵌入；旧版没有主题变量，必须给浅色实底，否则深字压深底看不见
+    const isNew = !!d.querySelector('.view.v-cards, .view.v-list');
+    const s = d.createElement('style');
+    s.id = 'rpt-embed-fix';
+    s.textContent = isNew
+      ? 'body{background:transparent!important;background-image:none!important}' +
+        'body .bg{display:none!important}' +
+        'body .page{padding:14px 14px 34px!important}' +
+        'body .hint{display:none!important}' +
+        'body .footbar .toggle{display:none!important}'
+      : 'body{background:#f6f9fe!important;background-image:none!important;color:#16233c!important}' +
+        'body .bg,body .scrim,body .stage,body .stage-wrap,body .viewseg{display:none!important}' +
+        'body .topbar .tb-side{display:none!important}' +
+        'body .slide-src{display:block!important;margin:0 0 14px!important;padding:16px 18px!important;' +
+          'border-radius:14px!important;background:#fff!important;' +
+          'border:1px solid rgba(120,145,190,.22)!important;box-shadow:0 2px 10px rgba(31,56,102,.05)!important}' +
+        'body .slide-src:last-child{margin-bottom:0!important}' +
+        'body .page{padding:14px!important;max-width:100%!important}';
+    d.head.appendChild(s);
+  } catch(e){}
+}
+function themeReport(pal){
+  try {
+    const f = document.getElementById('rptFrame');
+    const d = f && f.contentDocument;
+    if (!d || !d.body) return;
+    d.body.setAttribute('data-theme', pal.dark ? 'night' : 'clear');
+  } catch(e){}
+}
+
+/* ---------- 报告窗口：开在壁纸窗口上，不弹新窗口 ---------- */
+function prettyReportTitle(s){
+  let t = decodeURIComponent(String(s || '')).replace(/\.(html?|md)$/i, '');
+  t = t.replace(/-\d+$/, '').replace(/_/g, ' · ');
+  t = t.replace(/^GitHub(?=\S)/, 'GitHub ');
+  return t;
+}
+let RPT_OPEN = false, RPT_FILE = '';
+function openReportInline(file, title){
+  const lay = document.getElementById('rptLayer');
+  const iframe = document.getElementById('rptFrame');
+  const md = document.getElementById('rptMd');
+  const load = document.getElementById('rptLoad');
+  if (!lay || !iframe) return;
+  const isMd = /\.md$/i.test(file);
+  RPT_FILE = file;
+  document.getElementById('rptTitle').textContent = prettyReportTitle(title || file);
+  document.getElementById('rptTitle').title = decodeURIComponent(file);
+  document.getElementById('rptTag').textContent = isMd ? 'MARKDOWN' : 'HTML';
+  md.hidden = !isMd;
+  iframe.style.display = isMd ? 'none' : '';
+  load.hidden = false;
+  lay.classList.add('on');
+  lay.setAttribute('aria-hidden', 'false');
+  const wf = document.getElementById('wallFrame'); if (wf) wf.classList.add('report-on');
+  RPT_OPEN = true;
+  skinReport();
+  if (isMd){
+    try { iframe.src = 'about:blank'; } catch(e){}
+    fetch('/reports/' + encodeURIComponent(file)).then(r => r.text()).then(t => {
+      md.textContent = t; md.scrollTop = 0; load.hidden = true;
+    }).catch(() => { md.textContent = '读取失败'; load.hidden = true; });
+  } else {
+    iframe.onload = () => {
+      load.hidden = true;
+      const pal = wallPalette();
+      skinReport();
+      try { forceEmbed(iframe.contentDocument); } catch(e){}
+      themeReport(pal);
+    };
+    iframe.src = '/reports/' + encodeURIComponent(file) + '?embed=1&v=' + Date.now();
+  }
+  const st = document.getElementById('wallStage');
+  if (st && st.scrollIntoView) setTimeout(() => st.scrollIntoView({ behavior:'smooth', block:'center' }), 80);
+  log('ok', '📖 报告已在壁纸窗口里打开：' + (title || file));
+}
+function closeReport(){
+  const lay = document.getElementById('rptLayer');
+  const iframe = document.getElementById('rptFrame');
+  if (!lay || !RPT_OPEN) return;
+  RPT_OPEN = false;
+  lay.classList.remove('on');
+  lay.classList.remove('max');
+  const stack0 = document.querySelector('.stack'); if (stack0) stack0.classList.remove('no-glass');
+  document.body.classList.remove('rpt-max');
+  const wf = document.getElementById('wallFrame'); if (wf) wf.classList.remove('report-on');
+  lay.setAttribute('aria-hidden', 'true');
+  setTimeout(() => { if (!RPT_OPEN && iframe){ iframe.onload = null; try { iframe.src = 'about:blank'; } catch(e){} } }, 340);
+}
+function setReportMax(on){
+  const lay = document.getElementById('rptLayer');
+  const stack = document.querySelector('.stack');
+  if (!lay) return;
+  lay.classList.toggle('max', !!on);
+  if (stack) stack.classList.toggle('no-glass', !!on);
+  document.body.classList.toggle('rpt-max', !!on);
+}
+function toggleReportMax(){
+  const lay = document.getElementById('rptLayer');
+  if (!lay) return;
+  setReportMax(!lay.classList.contains('max'));
+}
+function bindReportUI(){
+  const x = document.getElementById('rptClose'); if (x) x.onclick = closeReport;
+  const mx = document.getElementById('rptMax'); if (mx) mx.onclick = toggleReportMax;
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    const lay = document.getElementById('rptLayer');
+    if (lay && lay.classList.contains('max')) toggleReportMax();
+    else closeReport();
+  });
+}
 function toggleLogDock(force){
   const d = document.getElementById('logDock');
   const fab = document.getElementById('logFab');
@@ -1678,19 +2265,11 @@ function toggleLogDock(force){
 }
 async function initWallpaper(){
   const v = document.getElementById('wallVideo');
-  const empty = document.getElementById('wallEmpty');
   if (!v) return;
   startWallWatch();
   let files = [];
   try { const r = await api('/api/wallpapers'); files = (r && r.files) || []; } catch(e){ files = []; }
   WALLS = files;
-  if (!files.length){
-    v.style.display = 'none';
-    if (empty) empty.style.display = 'grid';
-    return;
-  }
-  v.style.display = 'block';
-  if (empty) empty.style.display = 'none';
 
   v.addEventListener('ended', () => {
     if (WALL_PIN) { v.currentTime = 0; v.play().catch(()=>{}); } // 选定：循环播放当前视频，不切换
@@ -1714,7 +2293,31 @@ async function initWallpaper(){
   };
   const wallPinBtn = document.getElementById('wallPin');
   if (wallPinBtn) wallPinBtn.onclick = () => setWallPin(!WALL_PIN);
-  playWall(0);
+  const wpFile = document.getElementById('wpFile');
+  if (wpFile) wpFile.onchange = (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (f) pickWallImage(f);
+    e.target.value = '';
+  };
+
+  // 先用内置壁纸铺底，再按上次的选择决定要不要播视频 / 用自定义图片
+  let savedMode = '', savedPreset = '', savedCustom = '', savedFrost = '';
+  try {
+    savedMode = localStorage.getItem('wallMode') || '';
+    savedPreset = localStorage.getItem('wallPreset') || '';
+    savedCustom = localStorage.getItem('wallCustom') || '';
+    savedFrost = localStorage.getItem('wallFrost') || '';
+  } catch(e){}
+  if (savedFrost !== '') setFrost(savedFrost, true); else setFrost(WALL_FROST, true);
+  if (savedPreset) WALL_PRESET = savedPreset;
+  applyWallPreset(WALL_PRESET, true);
+  if (savedMode === 'custom' && savedCustom){
+    WALL_CUSTOM = savedCustom;
+    applyWallCustom(savedCustom, true);
+  } else {
+    const wantVideo = savedMode ? savedMode === 'video' : files.length > 0;
+    if (wantVideo && files.length) playWall(0);
+  }
 }
 function setWallPin(on){
   if (on) WALL_PIN = (WALLS[WALL_I] && WALLS[WALL_I].name) || WALL_PIN || '__cur__';
@@ -1739,9 +2342,11 @@ function playWall(i){
   }
   WALL_I = (i + WALLS.length) % WALLS.length;
   const w = WALLS[WALL_I];
+  wallVideoOn();
   v.src = w.url;
   document.getElementById('wallName').textContent = w.name;
   v.play().catch(()=>{});
+  renderWallPresets();
 }
 function wallStep(d){ if (WALL_PIN) return; if (WALLS.length) playWall(WALL_I + d); }
 
@@ -1766,14 +2371,16 @@ async function refreshWallpapers(){
   if (!files.length){
     v.pause(); v.removeAttribute('src'); v.load();
     v.style.display = 'none';
-    if (empty) empty.style.display = 'grid';
-    const nm = document.getElementById('wallName'); if (nm) nm.textContent = '—';
+    if (empty) empty.style.display = 'none';
     setWallPin(false);
-    log('sys', '🎞 壁纸目录已清空');
+    renderWallPresets();
+    if (WALL_MODE === 'video') applyWallPreset(WALL_PRESET, true);
+    log('sys', '🎞 壁纸视频目录已清空，已回到内置壁纸');
     return;
   }
-  v.style.display = 'block';
   if (empty) empty.style.display = 'none';
+  renderWallPresets();
+  if (WALL_MODE !== 'video') return;   // 当前用的是内置壁纸或自定义图片，不抢画面
 
   // 选定时：锁住被选定视频，不自动切换到新视频；被选定视频若被移除则自动取消选定
   if (WALL_PIN){
@@ -1888,7 +2495,7 @@ function pollJob(){
       if(j.error && j.error !== '用户取消'){
         toast('生成失败：' + j.error,'err');
       } else if(j.report){
-        log('ok','✔ ' + t('genDone') + '（可在「📂 报告目录 / 🕘 报告历史」中打开）');
+        log('ok','✔ ' + t('genDone') + '（报告已在下方壁纸窗口内打开）');
         toast(t('genDone'));
       } else if(j.error === '用户取消'){
         log('warn','⛔ 已取消本次生成');
@@ -1897,7 +2504,7 @@ function pollJob(){
       await refreshHistory();
       if(j.report && !j.error){
         const latest = (appState.reports||[])[0];
-        if(latest && latest.html) api('/api/open-report',{method:'POST',body:JSON.stringify({file:latest.html})});
+        if(latest && latest.html) openReportInline(latest.html, latest.name);
       }
       endGen();
       return;
@@ -2042,22 +2649,15 @@ function renderHistory(){
       <div class="doc">📄</div>
       <div class="info"><div class="nm">${escapeHtml(h.name)}</div><div class="tm">${escapeHtml(h.time)}</div></div>
       <div class="acts">
-        ${h.html?`<button class="mini-btn gh" onclick="openReport('${escapeHtml(h.html)}')">🌐 ${t('openHtml')}</button>`:''}
-        <button class="mini-btn" onclick="openReport('${escapeHtml(h.md)}')">📝 ${t('openMd')}</button>
+        ${h.html?`<button class="mini-btn gh" onclick="openReport('${escapeHtml(h.html)}','${escapeHtml(h.name)}')">🌐 ${t('openHtml')}</button>`:''}
+        <button class="mini-btn" onclick="openReport('${escapeHtml(h.md)}','${escapeHtml(h.name)}')">📝 ${t('openMd')}</button>
         <button class="mini-btn" onclick="delHistory('${escapeHtml(h.md)}')">🗑 ${t('del')}</button>
       </div>
     </div>`).join('');
 }
-function openReport(file){
-  const url = '/reports/' + encodeURIComponent(file);
-  const w = window.open(url, '_blank');
-  if (!w) {
-    // 弹窗被拦截：退化为当前页跳转，并提示
-    toast('浏览器拦截了新窗口，已在当前页打开（返回请按后退）', 'warn');
-    location.href = url;
-    return;
-  }
-  log('ok','📖 ' + t('hisOpenTT') + '：' + file);
+function openReport(file, title){
+  document.querySelectorAll('.overlay.show').forEach(o => o.classList.remove('show'));
+  openReportInline(file, title);
 }
 async function delHistory(md){
   if(!confirm('确定删除这份报告吗？（Markdown + HTML 一并删除）')) return;
@@ -3220,8 +3820,7 @@ async function ldOpenHistory(){  const r = await api('/api/localdeploy/history')
 function openLatest(){
   const latest = (appState.reports||[])[0];
   if(!latest || !latest.html){ toast(t('noReport'),'warn'); return; }
-  api('/api/open-report',{method:'POST',body:JSON.stringify({file:latest.html})});
-  log('ok','📖 ' + t('hisOpenTT') + '：' + latest.html);
+  openReportInline(latest.html, latest.name);
 }
 function openFav(){
   document.getElementById('ovFav').classList.add('show');
@@ -3282,6 +3881,7 @@ function showOfflineBanner(){
   const tc = document.getElementById('toolsCount');
   if(tc) tc.textContent = document.querySelectorAll('#toolsGrid .btn').length;
   try{ if(localStorage.getItem('toolsFold') === '1') toggleToolsFold(true); }catch(e){}
+  bindReportUI();
   initWallpaper();
   log('sys','🔥 ' + t('welcome'));
   log('info', t('tipAcc'));
